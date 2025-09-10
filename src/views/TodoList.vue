@@ -20,21 +20,20 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(todo, index) in upcomingTodos" :key="index">
-          <td>
-            <span :class="{ done: todo.done }" @click="toggleTodo(index)" style="cursor:pointer">
-              {{ todo.done ? 'Done' : 'Pending' }}
-            </span>
-          </td>
-          <td>{{ todo.title }}</td>
-          <td>{{ todo.task }}</td>
-          <td>{{ todo.date }}</td>
-
-          <td>
-            <button @click="openEditModal(todo)">Edit</button>
-            <button @click="removeTodo(index)">Delete</button>
-          </td>
-        </tr>
+      <tr v-for="todo in upcomingTodos" :key="todo.title + todo.task + todo.date">
+        <td>
+          <span :class="{ done: todo.done }" @click="toggleTodo(todo)" style="cursor:pointer">
+            {{ todo.done ? 'Done' : 'Pending' }}
+          </span>
+        </td>
+        <td>{{ todo.title }}</td>
+        <td>{{ todo.task }}</td>
+        <td>{{ todo.date }}</td>
+        <td>
+          <button @click="openEditModal(todo)">Edit</button>
+          <button @click="removeTodo(todo)">Delete</button>
+        </td>
+      </tr>
       </tbody>
     </table>
 
@@ -127,18 +126,33 @@ function addTodo() {
     }, 3000)
   }
 
-function toggleTodo(index) {
-  todos.value[index].done = !todos.value[index].done
+function toggleTodo(todoToToggle) {
+   const index = todos.value.findIndex(todo =>
+    todo.title === todoToToggle.title &&
+    todo.task === todoToToggle.task &&
+    todo.date === todoToToggle.date
+  )
+
+  if (index !== -1) {
+    todos.value[index].done = !todos.value[index].done
+  }
 }
 
-function removeTodo(index) {
-  todos.value.splice(index, 1)
+function removeTodo(todoToRemove) {
+  const index = todos.value.findIndex(todo =>
+    todo.title === todoToRemove.title &&
+    todo.task === todoToRemove.task &&
+    todo.date === todoToRemove.date
+  )
 
-  successMessage.value = '✅ Todo Removed successfully!'
+  if (index !== -1) {
+    todos.value.splice(index, 1)
+    successMessage.value = '✅ Todo Removed successfully!'
 
-  setTimeout(() => {
-    successMessage.value = ''
-  }, 3000)
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  }
 }
 
 function openEditModal(todo) {
