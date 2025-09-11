@@ -1,12 +1,13 @@
 <template>
   <div class="container">
-    <h1>Vue Todo List</h1>
-    <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
-    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-    <input type="date" v-model="newDate" placeholder="Enter Due Date"  />
-    <input v-model="newTitle" placeholder="Enter title" />
-    <input v-model="newTask"  @keyup.enter="addTodo" placeholder="Enter a new task"/>
+      <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <input type="date" v-model="newDate" placeholder="Enter Due Date"  />
+      <input v-model="newTitle" placeholder="Enter title" />
+      <input v-model="newTask"  @keyup.enter="addTodo" placeholder="Enter a new task"/>
     <br>
+    
     <button @click="addTodo">Add</button>
 
     <table class="todo-table">
@@ -190,12 +191,11 @@ function saveEdit() {
 
 </script>
 
-<style>
+<style scoped>
 .container {
-  max-width: 1000px;
-  margin: 50px auto;
+  max-width: 1120px;
+  margin: 20px auto;
   text-align: center;
-  font-family: Arial, sans-serif;
 }
 
 input {

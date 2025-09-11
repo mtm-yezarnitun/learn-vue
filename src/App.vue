@@ -8,6 +8,9 @@
         <li>
           <router-link to="/todos">Todo List</router-link>
         </li>
+        <li>
+          <router-link to="/calculator">Calculator</router-link>
+        </li>
       </ul>
     </nav>
 

@@ -1,6 +1,5 @@
 <template>
   <div class="container">
-    <h1>Vue Counter</h1>
     <h2>{{ count }}</h2>
     <button @click="increase">+ Add</button>
     <button @click="reset"> * Reset * </button>
@@ -35,7 +34,7 @@ function addIncrement() {
 
 </script>
 
-<style>
+<style scoped>
 .container {
   text-align: center;
   padding-top: 50px;
