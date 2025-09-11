@@ -11,6 +11,9 @@
         <li>
           <router-link to="/calculator">Calculator</router-link>
         </li>
+        <li>
+          <router-link to="/shop">Shop</router-link>
+        </li>
       </ul>
     </nav>
 
@@ -19,6 +22,10 @@
 </template>
 
 <style>
+* {
+  color: #43e192;
+}
+
 a {
   text-decoration: none;
   color:#ebf1ee;
@@ -39,11 +46,18 @@ ul {
   justify-content: center;
   padding: 20px;
   gap: 100px;
-
+}
+ul li {
+  list-style: none;
 }
 router-link {
   text-decoration: none;
   font-weight: bold;
   color: #ebf1ee;
+}
+
+.router-link-active {
+  font-weight: bold;
+  color: #43e192;
 }
 </style>

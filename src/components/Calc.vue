@@ -73,7 +73,7 @@ button {
   padding: 10px;
   font-size: 18px;
   background: #444;
-  color: white;
+  color: #43e192;
   border: none;
   border-radius: 5px;
   cursor: pointer;
