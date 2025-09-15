@@ -4,6 +4,7 @@ import TodoList from '../views/TodoListPage.vue'
 import Calculator from '../views/CalculatorPage.vue'
 import Shop from '../views/ShopPage.vue'
 import Rating from '../views/RatingPage.vue'
+import Weather from '../views/WeatherPage.vue'
 
 const routes = [
   { path: '/', redirect: '/counter' },
@@ -12,6 +13,7 @@ const routes = [
   { path: '/calculator', component: Calculator},
   { path: '/shop', component: Shop},
   { path: '/rating', component: Rating},
+  { path: '/weather', component: Weather},
 ]
 
 const router = createRouter({

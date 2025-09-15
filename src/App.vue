@@ -17,9 +17,11 @@
         <li>
           <router-link to="/rating">Rating</router-link>
         </li>
+        <li>
+          <router-link to="/weather">Weather</router-link>
+        </li>
       </ul>
     </nav>
-
     <router-view />
   </div>
 </template>

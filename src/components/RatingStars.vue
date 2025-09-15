@@ -1,3 +1,17 @@
+<template>
+  <div class="stars">
+    <span
+      v-for="n in 5"
+      :key="n"
+      class="star"
+      :class="{ active: n <= modelValue }"
+      @click="updateRating(n)"
+    >
+      ★
+    </span>
+  </div>
+</template>
+
 <script setup>
 const props = defineProps({
   modelValue: {
@@ -13,20 +27,6 @@ function updateRating(value) {
 }
 </script>
 
-<template>
-  <div class="stars">
-    <span
-      v-for="n in 5"
-      :key="n"
-      class="star"
-      :class="{ active: n <= modelValue }"
-      @click="updateRating(n)"
-    >
-      ★
-    </span>
-  </div>
-</template>
-
 <style scoped>
 .stars {
   display: flex;
@@ -35,7 +35,7 @@ function updateRating(value) {
   cursor: pointer;
 }
 .star {
-  color: #ccc; 
+  color: #555; 
 }
 .star.active {
   color: gold; 
