@@ -14,6 +14,9 @@
         <li>
           <router-link to="/shop">Shop</router-link>
         </li>
+        <li>
+          <router-link to="/rating">Rating</router-link>
+        </li>
       </ul>
     </nav>
 

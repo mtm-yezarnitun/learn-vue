@@ -3,7 +3,7 @@
       <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
-      <input type="date" v-model="newDate" placeholder="Enter Due Date"  />
+      <input type="date" :min="minDate" v-model="newDate" placeholder="Enter Due Date"  />
       <input v-model="newTitle" placeholder="Enter title" />
       <input v-model="newTask"  @keyup.enter="addTodo" placeholder="Enter a new task"/>
     <br>
@@ -39,7 +39,7 @@
     </table>
 
     <h2 v-if="pastTodos.length">Past Due Todos</h2>
-    <ul v-if="pastTodos.length">
+    <ul v-if="pastTodos.length" id="pastList">
       <li v-for="(todo, index) in pastTodos" :key="'past-' + index">
         ( {{ todo.done ? 'Done' : 'Pending' }} - {{ todo.title }} - {{ todo.task }} Due: {{ todo.date }} )
       </li>
@@ -240,6 +240,11 @@ ul {
   list-style: none;
   padding: 0;
 }
+#pastList {
+  display: block;
+  padding: 20px;
+  gap: 20px;
+}
 
 li {
   text-align: left;
@@ -247,6 +252,7 @@ li {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-bottom: 20px;
 }
 
 .done {
