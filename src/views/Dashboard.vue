@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { computed, onMounted } from "vue"
 import { useTodoStore } from '../stores/todoStore.js'
 
 const todoStore = useTodoStore()
@@ -76,7 +76,7 @@ onMounted(() => {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-top: 2rem;
 }
@@ -93,7 +93,7 @@ onMounted(() => {
 
 .card:hover {
   background: #43e192;
-  color: #000;
+  color: #f1ebeb !important;
   transform: translateY(-5px);
 }
 </style>

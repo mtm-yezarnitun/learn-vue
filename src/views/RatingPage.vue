@@ -33,8 +33,14 @@ watch(products, (newVal) => {
 }, { deep: true })
 
 function submitRatings() {
-  alert("Ratings saved to localStorage!")
+   window.$toast.success(`Ratings Updated Successfully !`, {
+    timeout: 5000,
+    position: 'top-center'
+  })
 }
+
+ 
+
 </script>
 
 <style scoped>

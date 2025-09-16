@@ -1,7 +1,5 @@
 <template>
   <div class="container">
-      <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <input type="date" :min="minDate" v-model="newDate" placeholder="Enter Due Date"  />
       <input v-model="newTitle" placeholder="Enter title" />

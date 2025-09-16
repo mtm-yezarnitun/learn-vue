@@ -68,7 +68,6 @@
           <p><strong>Currency:</strong> {{ Object.values(country.currencies)[0].name }} ({{ Object.values(country.currencies)[0].symbol }})</p>
         </div>
         <div class="globe-container">
-          <h2 v-if="weather" >Pin on Globe</h2>
           <div ref="globeEl" class="globe"></div>
         </div>
 
@@ -111,8 +110,8 @@ watch(weather, (newWeather) => {
       {
         lat,
         lng: lon,
-        size: 0.5,
-        color: "red",
+        size: 0.2,
+        color: "white",
         label: `${newWeather.name}, ${newWeather.sys.country}`
       }
     ])
@@ -154,7 +153,13 @@ async function getWeather() {
     await getCountryInfo(data.sys.country)
 
   } catch (err) {
-    error.value = err.message
+      globeInstance.pointsData([]) 
+      globeInstance.pointOfView({ lat: 0, lng: 0, altitude: 1 }, 2000)
+
+      window.$toast.error(`Error! Couldn't Find the City !`, {
+      timeout: 5000,
+      position: 'top-center'
+    })
   }
     loading.value = false
   }
@@ -176,7 +181,10 @@ async function getForecast() {
     forecast.value = data
     
   } catch (err) {
-    error.value = err.message
+    window.$toast.error(`Error! Couldn't Get the Forecast !`, {
+      timeout: 5000,
+      position: 'top-center'
+    })
   } 
     loading.value = false
 }
