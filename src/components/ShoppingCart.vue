@@ -23,16 +23,14 @@
 </template>
 
 <script setup>
-import { computed , ref } from 'vue'
+import { ref } from 'vue'
+
 const props = defineProps({
-  cart: Array
+  cart: Array,
+  total: Number
 })
 
 const emit = defineEmits(['remove', 'checkout'])
-
-const total = computed(() =>
-  props.cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)
-)
 
 const showForm = ref(false)
 const name = ref('')
@@ -43,7 +41,7 @@ function submitCheckout() {
   const order = {
     customer: { name: name.value, email: email.value, address: address.value },
     items: props.cart,
-    total: total.value
+    total: props.total
   }
   emit('checkout', order)
 
@@ -53,6 +51,7 @@ function submitCheckout() {
   showForm.value = false
 }
 </script>
+
 
 <style scoped>
 .cart {
