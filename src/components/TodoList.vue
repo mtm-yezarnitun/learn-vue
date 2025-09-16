@@ -45,7 +45,7 @@
       </li>
     </ul>
 
-    <p v-if="todos.length === 0">No tasks yet. Add something!</p>
+    <p v-if="todoStore.todos.length === 0">No tasks yet. Add something!</p>
 
     <div v-if="showModal" class="modal-overlay">
       <div class="modal">
@@ -63,97 +63,64 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted , computed } from 'vue'
+import { ref, onMounted , computed } from 'vue'
+import { useTodoStore } from '../stores/todoStore.js'
+
+const todoStore = useTodoStore()
 
 const newTask = ref('')
 const newTitle = ref('')
 const newDate = ref('')
-const todos = ref([])
 const showModal = ref(false)
 const selectedTodo = ref(null)
 const editTask = ref('')
 const editTitle = ref('')
 const editDate = ref('')
 
-const successMessage = ref('')
-const errorMessage = ref('')
 
 const minDate = new Date().toISOString().split('T')[0]
 
-const upcomingTodos = computed(() => {
-  return todos.value.filter(todo =>todo.date >= minDate)
-})
+const upcomingTodos = computed(() =>
+  todoStore.todos.filter(todo => todo.date >= minDate)
+)
 
-const pastTodos = computed(() => {
-  return todos.value.filter(todo =>todo.date < minDate)
-})
-
-
-watch(todos, (newTodos) => {
-  localStorage.setItem('todos', JSON.stringify(newTodos))
-}, { deep: true })
+const pastTodos = computed(() =>
+  todoStore.todos.filter(todo => todo.date < minDate)
+)
 
 onMounted(() => {
-  const saved = localStorage.getItem('todos')
-  if (saved) {
-    todos.value = JSON.parse(saved)
-  }
+  todoStore.loadFromLocalStorage()
 })
 
 function addTodo() {
   const title = newTitle.value.trim()
   const task = newTask.value.trim()
   const date = newDate.value.trim()
-  if (title === '' || task === '' || date === ''){
-    errorMessage.value = 'All fields are required.'
-    successMessage.value=''
 
-    setTimeout(() => {
-      errorMessage.value = ''
-    }, 3000)
+  if (!title || !task || !date) {
+    window.$toast.error ('All fields are required.')
+    window.$toast.success = ''
+    setTimeout(() => (window.$toast.error = ''), 3000)
     return
   }
-    todos.value.push({ title, task, date,done: false })
 
-    newTitle.value = ''
-    newTask.value = ''
-    newDate.value = ''
+  todoStore.addTodo({ title, task, date, done: false })
 
-    successMessage.value = '✅ Todo added successfully!'
-    errorMessage.value=''
-
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  }
-
-function toggleTodo(todoToToggle) {
-   const index = todos.value.findIndex(todo =>
-    todo.title === todoToToggle.title &&
-    todo.task === todoToToggle.task &&
-    todo.date === todoToToggle.date
-  )
-
-  if (index !== -1) { 
-    todos.value[index].done = !todos.value[index].done
-  }
+  newTitle.value = ''
+  newTask.value = ''
+  newDate.value = ''
+  window.$toast.success('Todo added successfully!')
+  window.$toast.error = ''
+  setTimeout(() => (window.$toast.success = ''), 3000)
 }
 
-function removeTodo(todoToRemove) {
-  const index = todos.value.findIndex(todo =>
-    todo.title === todoToRemove.title &&
-    todo.task === todoToRemove.task &&
-    todo.date === todoToRemove.date
-  )
+function toggleTodo(todo) {
+  todoStore.toggleTodo(todo)
+}
 
-  if (index !== -1) {
-    todos.value.splice(index, 1)
-    successMessage.value = '✅ Todo Removed successfully!'
-
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  }
+function removeTodo(todo) {
+  todoStore.removeTodo(todo)
+  window.$toast.success('Todo removed successfully!')
 }
 
 function openEditModal(todo) {
@@ -175,19 +142,21 @@ function saveEdit() {
   const title = editTitle.value.trim()
   const task = editTask.value.trim()
   const date = editDate.value.trim()
-  if (title !== '' && task !== '' && date != '' && selectedTodo.value) {
-    selectedTodo.value.title = title
-    selectedTodo.value.task = task
-    selectedTodo.value.date = date
 
-    successMessage.value = '✅ Todo updated successfully!'
+  if (!title && !task && !date && selectedTodo.value) return
+  
+  todoStore.updateTodo({
+    original: selectedTodo.value,
+    new: { title, task, date, done: selectedTodo.value.done }
+  })
+
+    window.$toast.success('Todo updated successfully!')
 
     setTimeout(() => {
-      successMessage.value = ''
+      window.$toast.success = ''
     }, 3000)
+    closeModal()
   }
-  closeModal()
-}
 
 </script>
 

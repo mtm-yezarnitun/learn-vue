@@ -29,16 +29,24 @@
   </div>
 </template>
 
+<script setup>
+import { useToast } from 'vue-toastification'
+import { onMounted } from 'vue';
+
+const toast = useToast()
+
+onMounted(() => {
+  window.$toast = toast
+})
+</script>
 
 <style>
-
-* {
-    color: #43e192;
+h1 {
+  color: #43e192;
 }
-
 a {
   text-decoration: none;
-  color: #555;
+  color: #555 !important;
   padding: 20px;
 
 }
@@ -72,7 +80,7 @@ router-link {
 
 .router-link-active {
   font-weight: bold;
-  color: #43e192;
+  color: #43e192 !important;
 }
 
 </style>
