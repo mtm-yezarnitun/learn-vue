@@ -134,7 +134,7 @@ function toggleTodo(todoToToggle) {
     todo.date === todoToToggle.date
   )
 
-  if (index !== -1) {
+  if (index !== -1) { 
     todos.value[index].done = !todos.value[index].done
   }
 }

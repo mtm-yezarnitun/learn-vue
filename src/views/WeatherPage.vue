@@ -5,7 +5,7 @@
             <input v-model="city" placeholder="Enter city name" />
             <button type="submit">Get Weather</button>
         </form>
-
+  
         <div v-if="loading">Loading....</div>
         <div v-if="error">! Error ! {{  error }}</div>
 
@@ -67,10 +67,16 @@
           <p><strong>Languages:</strong> {{ Object.values(country.languages).join(', ') }}</p>
           <p><strong>Currency:</strong> {{ Object.values(country.currencies)[0].name }} ({{ Object.values(country.currencies)[0].symbol }})</p>
         </div>
+        <div class="globe-container">
+          <h2 v-if="weather" >Pin on Globe</h2>
+          <div ref="globeEl" class="globe"></div>
+        </div>
+
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import Globe from "globe.gl"
 
 const city = ref('')
 const country= ref(null)
@@ -81,6 +87,37 @@ const forecast = ref(null)
 
 const API_KEY = '6e638478084f45c890d8f371791390bf'
 
+const globeEl = ref(null)
+let globeInstance = null
+
+onMounted(() => {
+  globeInstance = Globe()(globeEl.value)
+    .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+    .pointAltitude("size")
+    .pointColor("color")
+    .pointsData([])
+    .backgroundColor("#000");
+
+  globeInstance.width(globeEl.value.offsetWidth);
+  globeInstance.height(globeEl.value.offsetHeight);
+});
+
+watch(weather, (newWeather) => {
+  if (newWeather?.coord) {
+    const { lat, lon } = newWeather.coord
+    globeInstance.pointOfView({ lat, lng: lon, altitude: 0.3 }, 2000)
+
+    globeInstance.pointsData([
+      {
+        lat,
+        lng: lon,
+        size: 0.5,
+        color: "red",
+        label: `${newWeather.name}, ${newWeather.sys.country}`
+      }
+    ])
+  }
+})
 function formatTime(dtTxt) {
   const date = new Date(dtTxt)
   return date.toLocaleTimeString("en-US", {
@@ -115,7 +152,7 @@ async function getWeather() {
 
     weather.value = data
     await getCountryInfo(data.sys.country)
-    
+
   } catch (err) {
     error.value = err.message
   }
@@ -267,6 +304,25 @@ button {
 .country-details p {
   margin: 6px 0;
 }
+
+.globe-container {
+  margin-top: 2rem;
+  text-align: center;
+  color: #eee;
+  display: flex;
+  justify-content: center;
+}
+.globe {
+  height: 500px;
+  margin: 0 auto;
+  width: 100% !important;
+  max-width: 600px !important;
+  border: 1px solid #43e192;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,255,150,0.2);
+  overflow: hidden;
+}
+
 
 
 </style>

@@ -1,7 +1,10 @@
 <template>
   <div>
-    <nav>
+    <nav v-if="$route.path !== '/dashboard'">
       <ul>
+        <li>
+          <router-link to="/dashboard">📊</router-link>
+        </li>
         <li>
           <router-link to="/counter">Counter</router-link>
         </li>
@@ -26,14 +29,18 @@
   </div>
 </template>
 
+
 <style>
+
 * {
-  color: #43e192;
+    color: #43e192;
 }
 
 a {
   text-decoration: none;
-  color:#ebf1ee;
+  color: #555;
+  padding: 20px;
+
 }
 a:hover {
   color: grey;
@@ -41,7 +48,8 @@ a:hover {
 
 nav {
   position: absolute;
-  background: #080808;
+  background-color: black;
+  padding: 20px;
   top: 0;
   right: 0;
   width: 100%;  
@@ -49,7 +57,7 @@ nav {
 ul {
   display: flex;
   justify-content: center;
-  padding: 20px;
+  align-items: center;
   gap: 100px;
 }
 ul li {
@@ -59,10 +67,12 @@ router-link {
   text-decoration: none;
   font-weight: bold;
   color: #ebf1ee;
+  border: 1px solid transparent;
 }
 
 .router-link-active {
   font-weight: bold;
   color: #43e192;
 }
+
 </style>
