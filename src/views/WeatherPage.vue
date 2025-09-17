@@ -84,7 +84,7 @@ const loading = ref(false)
 const error = ref(null)
 const forecast = ref(null)
 
-const API_KEY = '6e638478084f45c890d8f371791390bf'
+const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 
 const globeEl = ref(null)
 let globeInstance = null
