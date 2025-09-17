@@ -81,21 +81,21 @@ import Globe from "globe.gl";
 const store = useStore();
 
 const city = computed({
-  get: () => store.getters.city,
-  set: (val) => store.commit('setCity', val)
+  get: () => store.getters['weather/city'],
+  set: (val) => store.commit('weather/setCity', val)
 });
 
-const weather = computed(() => store.getters.weather);
-const forecast = computed(() => store.getters.forecast);
-const country = computed(() => store.getters.country);
-const loading = computed(() => store.getters.loading);
-const error = computed(() => store.getters.error);
+const weather = computed(() => store.getters[weather/weather]);
+const forecast = computed(() => store.getters[weather/forecast]);
+const country = computed(() => store.getters[weather/country]);
+const loading = computed(() => store.getters[weather/loading]);
+const error = computed(() => store.getters[weather/error]);
 
 const globeEl = ref(null);
 let globeInstance = null;
 
-const getWeather = () => store.dispatch('fetchWeather', city.value);
-const getForecast = () => store.dispatch('fetchForecast');
+const getWeather = () => store.dispatch('weather/fetcheather', city.value);
+const getForecast = () => store.dispatch('weather/fetchForecast');
 
 function formatTime(dtTxt) {
   const date = new Date(dtTxt);
