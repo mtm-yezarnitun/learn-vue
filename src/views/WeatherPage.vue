@@ -85,16 +85,16 @@ const city = computed({
   set: (val) => store.commit('weather/setCity', val)
 });
 
-const weather = computed(() => store.getters[weather/weather]);
-const forecast = computed(() => store.getters[weather/forecast]);
-const country = computed(() => store.getters[weather/country]);
-const loading = computed(() => store.getters[weather/loading]);
-const error = computed(() => store.getters[weather/error]);
+const weather = computed(() => store.getters['weather/weather']);
+const forecast = computed(() => store.getters['weather/forecast']);
+const country = computed(() => store.getters['weather/country']);
+const loading = computed(() => store.getters['weather/loading']);
+const error = computed(() => store.getters['weather/error']);
 
 const globeEl = ref(null);
 let globeInstance = null;
 
-const getWeather = () => store.dispatch('weather/fetcheather', city.value);
+const getWeather = () => store.dispatch('weather/fetchWeather', city.value);
 const getForecast = () => store.dispatch('weather/fetchForecast');
 
 function formatTime(dtTxt) {

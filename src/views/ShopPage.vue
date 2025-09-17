@@ -7,7 +7,7 @@
     <div class="side-cart">
       <ShoppingCart :cart="cartStore.cart" :total="cartStore.total" @remove="cartStore.removeFromCart" @checkout="handleCheckout" />
     </div>
-  </div>
+  </div>s
 </template>
 
 <script setup>
