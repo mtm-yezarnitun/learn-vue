@@ -74,20 +74,41 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import Globe from "globe.gl"
+import { useStore } from 'vuex';
+import { computed, ref, onMounted, watch } from 'vue';
+import Globe from "globe.gl";
 
-const city = ref('')
-const country= ref(null)
-const weather = ref(null)
-const loading = ref(false)
-const error = ref(null)
-const forecast = ref(null)
+const store = useStore();
 
-const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
+const city = computed({
+  get: () => store.getters.city,
+  set: (val) => store.commit('setCity', val)
+});
 
-const globeEl = ref(null)
-let globeInstance = null
+const weather = computed(() => store.getters.weather);
+const forecast = computed(() => store.getters.forecast);
+const country = computed(() => store.getters.country);
+const loading = computed(() => store.getters.loading);
+const error = computed(() => store.getters.error);
+
+const globeEl = ref(null);
+let globeInstance = null;
+
+const getWeather = () => store.dispatch('fetchWeather', city.value);
+const getForecast = () => store.dispatch('fetchForecast');
+
+function formatTime(dtTxt) {
+  const date = new Date(dtTxt);
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 onMounted(() => {
   globeInstance = Globe()(globeEl.value)
@@ -103,9 +124,8 @@ onMounted(() => {
 
 watch(weather, (newWeather) => {
   if (newWeather?.coord) {
-    const { lat, lon } = newWeather.coord
-    globeInstance.pointOfView({ lat, lng: lon, altitude: 0.3 }, 2000)
-
+    const { lat, lon } = newWeather.coord;
+    globeInstance.pointOfView({ lat, lng: lon, altitude: 0.3 }, 2000);
     globeInstance.pointsData([
       {
         lat,
@@ -114,96 +134,9 @@ watch(weather, (newWeather) => {
         color: "white",
         label: `${newWeather.name}, ${newWeather.sys.country}`
       }
-    ])
+    ]);
   }
-})
-function formatTime(dtTxt) {
-  const date = new Date(dtTxt)
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  }) 
-}
-
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
-
-async function getWeather() {
-  if (!city.value) return
-
-  loading.value = true
-  error.value = null
-  weather.value = null
-  forecast.value = null
-  country.value = null
-
-  try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city.value}&appid=${API_KEY}&units=metric`
-    )
-    const data = await response.json()
-
-    if (data.cod !== 200) {
-      throw new Error(data.message)
-    }
-
-    weather.value = data
-    await getCountryInfo(data.sys.country)
-
-  } catch (err) {
-      globeInstance.pointsData([]) 
-      globeInstance.pointOfView({ lat: 0, lng: 0, altitude: 1 }, 2000)
-
-      window.$toast.error(`Error! Couldn't Find the City !`, {
-      timeout: 5000,
-      position: 'top-center'
-    })
-  }
-    loading.value = false
-  }
-
-async function getForecast() {
-  loading.value = true  
-  error.value = null
-  forecast.value = null
-
-  try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city.value}&appid=${API_KEY}&units=metric`
-    )
-    const data = await response.json()
-
-    if (data.cod !== "200") {
-      throw new Error(data.message)
-    }
-    forecast.value = data
-    
-  } catch (err) {
-    window.$toast.error(`Error! Couldn't Get the Forecast !`, {
-      timeout: 5000,
-      position: 'top-center'
-    })
-  } 
-    loading.value = false
-}
-
-async function getCountryInfo(code) {
-  try {
-    const response = await fetch(`https://restcountries.com/v3.1/alpha/${code}`)
-    const data = await response.json()
-
-    if (!data || data.status === 404) {
-      throw new Error('Country not found')
-    }
-
-    country.value = data[0]
-  } catch (err) {
-    console.error('Country API error:', err)
-  }
-}
-
+});
 </script>
 
 <style scoped>
