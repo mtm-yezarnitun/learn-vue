@@ -25,17 +25,18 @@
 
 <script setup>
 import { computed, onMounted } from "vue"
-import { useTodoStore } from '../stores/todoStore.js'
+import { useStore } from 'vuex'
 
-const todoStore = useTodoStore()
+const store = useStore()
 const minDate = new Date().toISOString().split("T")[0]
 
-const upcomingTodos = computed(() =>
-  todoStore.todos.filter(todo => todo.date >= minDate)
-)
+const todos = computed(() => store.getters['todo/todos'])
 
+const upcomingTodos = computed(() =>
+  todos.value.filter(todo => todo.date >= minDate)
+)
 onMounted(() => {
-  todoStore.loadFromLocalStorage()
+  store.dispatch('todo/loadFromLocalStorage')
 })
 
 </script>

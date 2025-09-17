@@ -43,7 +43,7 @@
       </li>
     </ul>
 
-    <p v-if="todoStore.todos.length === 0">No tasks yet. Add something!</p>
+    <p v-if="todos.length === 0">No tasks yet. Add something!</p>
 
     <div v-if="showModal" class="modal-overlay">
       <div class="modal">
@@ -62,9 +62,9 @@
 
 <script setup>
 import { ref, onMounted , computed } from 'vue'
-import { useTodoStore } from '../stores/todoStore.js'
+import { useStore } from 'vuex'
 
-const todoStore = useTodoStore()
+const store = useStore()
 
 const newTask = ref('')
 const newTitle = ref('')
@@ -78,17 +78,15 @@ const editDate = ref('')
 
 const minDate = new Date().toISOString().split('T')[0]
 
+const todos = computed(() => store.getters['todo/todos'])
+
 const upcomingTodos = computed(() =>
-  todoStore.todos.filter(todo => todo.date >= minDate)
+  todos.value.filter(todo => todo.date >= minDate)
 )
 
 const pastTodos = computed(() =>
-  todoStore.todos.filter(todo => todo.date < minDate)
+  todos.value.filter(todo => todo.date < minDate)
 )
-
-onMounted(() => {
-  todoStore.loadFromLocalStorage()
-})
 
 function addTodo() {
   const title = newTitle.value.trim()
@@ -97,27 +95,23 @@ function addTodo() {
 
   if (!title || !task || !date) {
     window.$toast.error ('All fields are required.')
-    window.$toast.success = ''
-    setTimeout(() => (window.$toast.error = ''), 3000)
     return
   }
 
-  todoStore.addTodo({ title, task, date, done: false })
+  store.dispatch('todo/addTodo', { title, task, date, done: false })
 
   newTitle.value = ''
   newTask.value = ''
   newDate.value = ''
   window.$toast.success('Todo added successfully!')
-  window.$toast.error = ''
-  setTimeout(() => (window.$toast.success = ''), 3000)
 }
 
 function toggleTodo(todo) {
-  todoStore.toggleTodo(todo)
+  store.dispatch('todo/toggleTodo', todo)
 }
 
 function removeTodo(todo) {
-  todoStore.removeTodo(todo)
+  store.dispatch('todo/removeTodo', todo)
   window.$toast.success('Todo removed successfully!')
 }
 
@@ -134,6 +128,7 @@ function closeModal() {
   selectedTodo.value = null
   editTitle.value = ''
   editTask.value = ''
+  editDate.value = ''
 }
 
 function saveEdit() {
@@ -142,20 +137,15 @@ function saveEdit() {
   const date = editDate.value.trim()
 
   if (!title && !task && !date && selectedTodo.value) return
-  
-  todoStore.updateTodo({
+
+  store.dispatch('todo/updateTodo', {
     original: selectedTodo.value,
     new: { title, task, date, done: selectedTodo.value.done }
   })
 
-    window.$toast.success('Todo updated successfully!')
-
-    setTimeout(() => {
-      window.$toast.success = ''
-    }, 3000)
-    closeModal()
-  }
-
+  window.$toast.success('Todo updated successfully!')
+  closeModal()
+}
 </script>
 
 <style scoped>

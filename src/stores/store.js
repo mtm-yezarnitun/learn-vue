@@ -1,8 +1,13 @@
 import { createStore } from 'vuex';
+import todo from './modules/todo'
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 
 const store = createStore({
+  modules: {
+    todo
+    },
+    
   state() {
     return {
       city: localStorage.getItem('city') || '',
