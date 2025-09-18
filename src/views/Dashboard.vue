@@ -36,9 +36,6 @@ const todos = computed(() => store.getters['todo/todos'])
 const upcomingTodos = computed(() =>
   todos.value.filter(todo => todo.date >= minDate)
 )
-onMounted(() => {
-  store.dispatch('todo/loadFromLocalStorage')
-})
 
 </script>
 

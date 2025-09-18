@@ -2,10 +2,12 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import './style.css'
 import Toast from 'vue-toastification'
-import 'vue-toastification/dist/index.css'
 import store from './stores/store'
+import 'vue-toastification/dist/index.css'
+import './style.css'
+
+store.dispatch("auth/init");
 
 const app = createApp(App)
 app.use(createPinia())
