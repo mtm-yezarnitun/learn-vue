@@ -44,6 +44,7 @@ const blog = {
       try {
         const res = await axios.post(`${API_URL}/posts`, { post });
         commit("addPost", res.data.data);
+        window.$toast.success ('Post Created Successfully !')
       } catch (err) {
         commit("setError", err.message);
       }
@@ -52,6 +53,7 @@ const blog = {
       try {
         await axios.delete(`${API_URL}/posts/${id}`);
         commit("removePost", id);
+        window.$toast.error ('Post Deleted Successfully  !')
       } catch (err) {
         commit("setError", err.message);
       }
@@ -61,8 +63,10 @@ const blog = {
         const res = await axios.put(`${API_URL}/posts/${id}`, { post });
         const updated = state.posts.map(p => (p.id === id ? res.data : p));
         commit("setPosts", updated);
+        window.$toast.success ('Post Updated Successfully  !')
       } catch (err) {
         commit("setError", err.message);
+        window.$toast.error ('Cannot Edit Someone else`s Post !!')
       }
     }
 

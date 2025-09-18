@@ -3,4 +3,8 @@ class Post < ApplicationRecord
 
   validates :title, presence: true
   validates :body, presence: true
+
+  def user_email
+    user.email
+  end
 end

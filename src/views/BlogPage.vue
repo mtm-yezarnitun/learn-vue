@@ -17,6 +17,7 @@
       <div v-for="post in posts" :key="post.id" class="post-card">
         <h3>{{ post.title }}</h3>
         <p>{{ post.body }}</p>
+        <p>{{ post.user_email }}</p>
 
         <div class="btns">
           <button @click="editPost(post)" class="edit">Edit</button>

@@ -1,26 +1,26 @@
 module Api
   module V1
     class PostsController < ApplicationController
-      # before_action :authenticate_user!, except: [:index, :show]
+      before_action :authenticate_user!, except: [:index, :show]
       before_action :set_post, only: [:show, :update, :destroy]
-      # before_action :authorize_user!, only: [:update, :destroy]
+      before_action :authorize_user!, only: [:update, :destroy]
 
       # GET /posts
       def index
         posts = Post.all
-        render json: posts
+        render json: posts.map { |p| p.as_json.merge(user_email: p.user.email) }
       end
 
       # GET /posts/:id
       def show
-        render json: @post
+        render json: @post.as_json.merge(user_email: @post.user.email)
       end
 
       # POST /posts
       def create
-        post = Post.new(post_params)
+        post = current_user.posts.build(post_params)
         if post.save
-          render json: { status: 201, message: 'Post created', data: post }, status: :created
+          render json: { status: 201, message: 'Post created', data: post.as_json.merge(user_email: current_user.email) }, status: :created
         else
           render json: { status: 422, message: post.errors.full_messages.to_sentence }, status: :unprocessable_entity
         end
@@ -51,6 +51,7 @@ module Api
       def authorize_user!
         unless @post.user_id == current_user.id 
         render json: { error: "Unauthorized" }, status: :unauthorized
+        return
       end
       end
 
