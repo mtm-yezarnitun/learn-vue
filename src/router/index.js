@@ -6,6 +6,7 @@ import Shop from '../views/ShopPage.vue'
 import Rating from '../views/RatingPage.vue'
 import Weather from '../views/WeatherPage.vue'
 import Dashboard from '../views/Dashboard.vue'
+import Blog from "../views/BlogPage.vue"
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -16,6 +17,8 @@ const routes = [
   { path: '/rating', component: Rating},
   { path: '/weather', component: Weather},
   { path: '/dashboard', component: Dashboard},
+  { path: "/blog", component: Blog }
+
 ]
 
 const router = createRouter({
