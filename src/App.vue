@@ -6,13 +6,13 @@
           <router-link to="/dashboard">📊</router-link>
         </li>
         <li>
-          <router-link to="/counter">Counter</router-link>
+          <router-link to="/blog">Blog</router-link>
         </li>
         <li>
           <router-link to="/todos">Todo List</router-link>
         </li>
         <li>
-          <router-link to="/calculator">Calculator</router-link>
+          <router-link to="/weather">Weather</router-link>
         </li>
         <li>
           <router-link to="/shop">Shop</router-link>
@@ -21,7 +21,10 @@
           <router-link to="/rating">Rating</router-link>
         </li>
         <li>
-          <router-link to="/weather">Weather</router-link>
+          <router-link to="/calculator">Calculator</router-link>
+        </li>
+        <li>
+          <router-link to="/counter">Counter</router-link>
         </li>
       </ul>
     </nav>

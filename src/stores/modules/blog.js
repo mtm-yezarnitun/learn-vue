@@ -41,19 +41,38 @@ const blog = {
       }
     },
     async createPost({ commit }, post) {
-      const res = await axios.post(`${API_URL}/posts`, { post })
-      commit("addPost", res.data)
+      try {
+        const res = await axios.post(`${API_URL}/posts`, { post });
+        commit("addPost", res.data.data);
+      } catch (err) {
+        commit("setError", err.message);
+      }
     },
     async deletePost({ commit }, id) {
-      await axios.delete(`${API_URL}/posts/${id}`)
-      commit("removePost", id)
+      try {
+        await axios.delete(`${API_URL}/posts/${id}`);
+        commit("removePost", id);
+      } catch (err) {
+        commit("setError", err.message);
+      }
+    },
+    async updatePost({ commit, state }, { id, post }) {
+      try {
+        const res = await axios.put(`${API_URL}/posts/${id}`, { post });
+        const updated = state.posts.map(p => (p.id === id ? res.data : p));
+        commit("setPosts", updated);
+      } catch (err) {
+        commit("setError", err.message);
+      }
     }
+
   },
   getters: {
     posts: state => state.posts,
     loading: state => state.loading,
-    error: state => state.error
+    error: state => state.error,
+    postById: state => id => state.posts.find(p => p.id === id)
   }
 }
 
-export default blog
+export default blog;

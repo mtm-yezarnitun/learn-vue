@@ -43,6 +43,9 @@ module BlogApi
 
     config.load_defaults 7.0 # or 6.x depending on your Rails version
 
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
+
     # Allow frontend (Vue) to access the API
     config.middleware.insert_before 0, Rack::Cors do
       allow do

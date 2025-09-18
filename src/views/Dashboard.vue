@@ -13,12 +13,13 @@
     </section>
 
     <section class="cards">
-      <router-link to="/counter" class="card">Counter</router-link>
+      <router-link to="/blog" class="card">Blog</router-link>
       <router-link to="/todos" class="card">Todo List</router-link>
-      <router-link to="/calculator" class="card">Calculator</router-link>
+      <router-link to="/weather" class="card">Weather</router-link>
       <router-link to="/shop" class="card">Shop</router-link>
       <router-link to="/rating" class="card">Rating</router-link>
-      <router-link to="/weather" class="card">Weather</router-link>
+      <router-link to="/calculator" class="card">Calculator</router-link>
+      <router-link to="/counter" class="card">Counter</router-link>
     </section>
   </div>
 </template>
