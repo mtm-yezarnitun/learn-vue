@@ -3,7 +3,7 @@
     <nav v-if="$route.path !== '/dashboard' && $route.path !== '/login' && $route.path !== '/register'">
       <ul>
         <li>
-          <router-link to="/dashboard">📊</router-link>
+          <router-link to="/dashboard">▣</router-link>
         </li>
         <li>
           <router-link to="/blog">Blog</router-link>

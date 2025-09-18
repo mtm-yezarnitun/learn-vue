@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h1>📊Dashboard</h1>
+    <h1>▣ Dashboard</h1>
 
     <section class="todos-preview" v-if="upcomingTodos.length">
       <h2>Upcoming Todos</h2>

@@ -1,5 +1,5 @@
 <template>
-  <h1>Shop</h1>
+  <h1>£ Shop</h1>
   <div class="shop-container">
     <div class="products">
       <ProductList @add-to-cart="cartStore.addToCart" />

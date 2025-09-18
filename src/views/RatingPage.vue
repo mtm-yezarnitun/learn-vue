@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Product Ratings</h1>
+    <h1>★ Product Ratings</h1>
 
     <div v-for="product in products" :key="product.id" class="product-card">
       <h3>{{ product.name }}</h3>

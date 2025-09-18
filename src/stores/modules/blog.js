@@ -56,6 +56,7 @@ const blog = {
         window.$toast.error ('Post Deleted Successfully  !')
       } catch (err) {
         commit("setError", err.message);
+        window.$toast.error ('Cannot Delete Someone else`s Post !!')
       }
     },
     async updatePost({ commit, state }, { id, post }) {

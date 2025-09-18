@@ -1,5 +1,5 @@
 <template>
-  <h1>Registrations</h1>
+  <h1> 🖎 Registrations</h1>
   <form @submit.prevent="signup" class="signup-form">
     <input v-model="email" placeholder="Email" />
     <input type="password" v-model="password" placeholder="Password" />

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Calculator</h1>
+    <h1>⌘ Calculator</h1>
     <Calc />
   </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1> Weather Forecast </h1>
+    <h1> ❆ Weather Forecast </h1>
     <form @submit.prevent="getWeather">
             <input v-model="city" placeholder="Enter city name" />
             <button type="submit">Get Weather</button>

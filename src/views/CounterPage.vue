@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Vue Counter</h1>
+    <h1>🜓 Counter</h1>
     <Counter />
   </div>
 </template>

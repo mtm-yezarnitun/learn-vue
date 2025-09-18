@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Todo Lists</h1>
+    <h1>🗹 Todo Lists</h1>
     <TodoList />
   </div>
 </template>
