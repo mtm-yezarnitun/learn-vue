@@ -7,7 +7,8 @@ import Shop from '../views/ShopPage.vue'
 import Rating from '../views/RatingPage.vue'
 import Weather from '../views/WeatherPage.vue'
 import Dashboard from '../views/Dashboard.vue'
-import Blog from "../views/BlogPage.vue"
+import Blog from '../views/BlogPage.vue'
+import Post from '../views/PostDetails.vue'
 import Login from '../views/LoginPage.vue'
 import Register from '../views/RegisterPage.vue'
 
@@ -21,6 +22,7 @@ const routes = [
   { path: '/weather', component: Weather },
   { path: '/dashboard', component: Dashboard },
   { path: "/blog", component: Blog },
+  { path: "/blog/:id", component: Post },
   { path: "/login", component: Login },
   { path: "/register", component: Register }
 ]

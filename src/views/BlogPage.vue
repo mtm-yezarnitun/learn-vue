@@ -24,10 +24,11 @@
         v-for="post in (showMineOnly ? myPosts : posts)" 
         :key="post.id" 
         class="post-card">
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.body }}</p>
-        <p>{{ post.user_email }}</p>
-
+        <router-link :to="`/blog/${post.id}`">
+          <h3>{{ post.title }}</h3>
+          <p>{{ post.body }}</p>
+          <p>{{ post.user_email }}</p>
+        </router-link>
         <div v-if="post.user_id == userData.id" class="btns">
           <button @click="editPost(post)" class="edit">Edit</button>
           <button @click="removePost(post.id)">Delete</button>
