@@ -30,7 +30,7 @@
 
       <div class="user-info">
         <template v-if="isAuthenticated">
-           <router-link v-if="user.role == 'admin' " to="/counter">Counter</router-link>
+           <router-link v-if="user.role == 'admin'" to="/admin/users"> Manage </router-link>
           <span>{{ user.email }}</span>
           <button @click="logout">Logout</button>
         </template>

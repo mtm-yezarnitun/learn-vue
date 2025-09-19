@@ -11,6 +11,7 @@ import Blog from '../views/BlogPage.vue'
 import Post from '../views/PostDetails.vue'
 import Login from '../views/LoginPage.vue'
 import Register from '../views/RegisterPage.vue'
+import User from '../views/Users.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -24,7 +25,8 @@ const routes = [
   { path: "/blog", component: Blog },
   { path: "/blog/:id", component: Post },
   { path: "/login", component: Login },
-  { path: "/register", component: Register }
+  { path: "/register", component: Register },
+  { path: "/admin/users", component: User }
 ]
 
 const router = createRouter({

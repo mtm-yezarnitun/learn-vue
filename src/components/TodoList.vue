@@ -51,9 +51,10 @@
         <input type="date" v-model="editDate" placeholder="Edit Date" :min="minDate"/>
         <input v-model="editTitle" placeholder="Edit title" />
         <input v-model="editTask" @keyup.enter="saveEdit" placeholder="Edit task" />
-        <div class="modal-buttons"></div>
+        <div class="modal-buttons">
         <button @click="saveEdit">Save</button>
         <button @click="closeModal">Cancel</button>
+        </div>
       </div>
     </div>
 
