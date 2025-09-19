@@ -29,7 +29,7 @@
           <p>{{ post.body }}</p>
           <p>{{ post.user_email }}</p>
         </router-link>
-        <div v-if="post.user_id == userData.id" class="btns">
+        <div v-if="post.user_id == userData.id || userData.role == 'admin'" class="btns">
           <button @click="editPost(post)" class="edit">Edit</button>
           <button @click="removePost(post.id)">Delete</button>
         </div>

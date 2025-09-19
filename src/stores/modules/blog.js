@@ -116,7 +116,7 @@ const blog = {
     async deleteComment({ commit, state }, { postId, commentId }) {
       const comment = state.comments[postId]?.find(c => c.id === commentId);
       const user = JSON.parse(localStorage.getItem("user"));
-      if (!comment || comment.user_id !== user.id) {
+      if (!comment || (comment.user_id !== user.id && user.role !== 'admin')) {
         window.$toast.error("Cannot delete someone else's comment!");
         return;
       }

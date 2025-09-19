@@ -13,7 +13,7 @@
         <p>{{ comment.content }}</p>
         <small>{{ comment.user?.email }}</small>
         <button 
-          v-if="comment.user_id === userData.id" 
+          v-if="comment.user_id === userData.id || userData.role == 'admin'" 
           @click="handleDeleteComment(comment.id)"
         >
           Delete
