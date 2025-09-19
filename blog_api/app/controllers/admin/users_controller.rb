@@ -39,7 +39,7 @@ class Admin::UsersController < ApplicationController
     def destroy
         @user = User.find(params[:id])
         @user.destroy
-        head :no_content
+        render json: { message: 'User deleted successfully.' },status: :ok
     end
 
     private

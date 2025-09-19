@@ -4,6 +4,7 @@ import weather from './modules/weather'
 import blog from './modules/blog'
 import auth from './modules/auth'
 import users from './modules/users'
+import profile from './modules/profile'
 
 const store = createStore({
   modules: {
@@ -11,7 +12,8 @@ const store = createStore({
     weather,
     blog,
     auth,
-    users
+    users,
+    profile
     },
 
 });

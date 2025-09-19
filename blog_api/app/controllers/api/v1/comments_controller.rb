@@ -22,7 +22,7 @@ module Api
 
       def destroy
         @comment.destroy
-        head :no_content
+        render json: { message: 'Comment deleted successfully.' },status: :ok
       end
 
       private

@@ -45,6 +45,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 const store = useStore();
 
 const form = ref({
@@ -81,7 +84,7 @@ const resetForm = () => {
 };
 
 onMounted(() => {
- store.dispatch("users/fetchUsers")
+ store.dispatch("users/fetchUsers" , router)
 });
 </script>
 

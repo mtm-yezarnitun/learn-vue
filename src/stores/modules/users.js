@@ -30,12 +30,16 @@ const users = {
     },
   },
   actions: {
-    async fetchUsers({ commit }) {
+    async fetchUsers({ commit } , router) {
       try {
         const res = await axios.get(`${API_URL}`);
         commit("setUsers", res.data);
       } catch (err) {
-        commit("setError", err.message);
+          if (err.response && err.response.status === 403) {
+            window.$toast.error("No Access to This Page!!")
+            router.push('/dashboard')
+          commit("setError", err.message);
+        }
       }
     },
     
