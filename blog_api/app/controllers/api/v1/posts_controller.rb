@@ -7,7 +7,7 @@ module Api
 
       # GET /posts
       def index
-        posts = Post.all
+        posts = Post.all.order(created_at: :desc)
         render json: posts.map { |p| p.as_json.merge(user_email: p.user.email) }
       end
 

@@ -16,7 +16,7 @@ const blog = {
       state.posts = posts
     },
     addPost(state, post) {
-      state.posts.push(post)
+      state.posts.unshift(post)
     },
     removePost(state, id) {
       state.posts = state.posts.filter(p => p.id !== id)
@@ -47,6 +47,7 @@ const blog = {
         window.$toast.success ('Post Created Successfully !')
       } catch (err) {
         commit("setError", err.message);
+        window.$toast.error ('Couldn`t Create Post!')
       }
     },
     async deletePost({ commit }, id) {
@@ -76,7 +77,13 @@ const blog = {
     posts: state => state.posts,
     loading: state => state.loading,
     error: state => state.error,
-    postById: state => id => state.posts.find(p => p.id === id)
+    postById: state => id => state.posts.find(p => p.id === id),
+
+    myPosts: (state) => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return [];
+    return state.posts.filter(p => p.user_id === user.id);
+  }
   }
 }
 

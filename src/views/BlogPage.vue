@@ -13,18 +13,28 @@
 
     </form>
 
+    <div class="posts-toggle">
+      <button @click="showMine">
+        {{ showMineOnly ? "Show All Posts" : "Show My Posts" }}
+      </button>
+    </div>
+
     <div class="posts-grid">
-      <div v-for="post in posts" :key="post.id" class="post-card">
+      <div 
+        v-for="post in (showMineOnly ? myPosts : posts)" 
+        :key="post.id" 
+        class="post-card">
         <h3>{{ post.title }}</h3>
         <p>{{ post.body }}</p>
         <p>{{ post.user_email }}</p>
 
-        <div class="btns">
+        <div v-if="post.user_id == userData.id" class="btns">
           <button @click="editPost(post)" class="edit">Edit</button>
           <button @click="removePost(post.id)">Delete</button>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -40,13 +50,20 @@ const editMode = ref(false);
 const editId = ref(null);
 
 const posts = computed(() => store.getters["blog/posts"]);
+const myPosts = computed(() => store.getters["blog/myPosts"]);
+
+const userData = ref(JSON.parse(localStorage.getItem("user")) || {});
+const showMineOnly = ref(false);
 
 onMounted(() => {
   store.dispatch("blog/fetchPosts");
 });
 
 function submitPost() {
-  if (!title.value || !body.value) return;
+  if (!title.value || !body.value) {
+    window.$toast.error("All Fields are Required!");
+    return;
+  }
 
   if (editMode.value) {
     store.dispatch("blog/updatePost", { id: editId.value, post: { title: title.value, body: body.value } });
@@ -76,6 +93,10 @@ function cancelEdit() {
 
 function removePost(id) {
   store.dispatch("blog/deletePost", id);
+}
+
+function showMine() {
+  showMineOnly.value = !showMineOnly.value;
 }
 </script>
 
@@ -184,4 +205,27 @@ h1 {
   background-color: white;
   border: 1px solid #e74c3c;
 }
+
+.posts-toggle {
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.posts-toggle button {
+  padding: 8px 16px;
+  background-color: #43e192;
+  color: white;
+  border: 1px solid black;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.posts-toggle button:hover {
+  background-color: #1e1e1e;
+  border: 1px solid #43e192;
+}
+
 </style>
