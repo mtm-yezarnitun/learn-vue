@@ -21,8 +21,8 @@
           <th>ID</th>
           <th>Email</th>
           <th>Role</th>
-          <th>Actions</th>
           <th>Created At</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>

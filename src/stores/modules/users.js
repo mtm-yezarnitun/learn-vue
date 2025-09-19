@@ -75,7 +75,7 @@ const users = {
         const res = await axios.put(`${API_URL}/${id}`,{ user: userData }, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        window.$toast.success("User Removed Successfully!");
+        window.$toast.success("User Updated Successfully!");
         commit("updateUser", res.data);
       } catch (err) {
         commit("setError", err.response?.data || err.message);
