@@ -11,7 +11,10 @@ module Api
       # PATCH/PUT /api/v1/profile
       def update
         if current_user.update(profile_params)
-          render  json: { message: 'Updated successfully.' },status: :ok
+          render  json:{
+              "user": current_user,
+              "message": "Updated successfully."
+            } ,status: :ok
         else
           render json: current_user.errors, status: :unprocessable_entity
         end
@@ -21,7 +24,7 @@ module Api
 
       # Only allow the user to update their own email/password
       def profile_params
-        params.require(:user).permit(:email, :password, :password_confirmation)
+        params.require(:user).permit(:name, :email, :password, :password_confirmation)
       end
     end
   end

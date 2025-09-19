@@ -2,6 +2,7 @@
   <h1> 🖎 Registrations</h1>
   <form @submit.prevent="signup" class="signup-form">
     <input v-model="email" placeholder="Email" />
+    <input v-model="Fname" placeholder="Name" />
     <input type="password" v-model="password" placeholder="Password" />
     <button type="submit">Sign Up</button>
   </form>
@@ -16,13 +17,15 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const store = useStore();
+const Fname = ref("");
 const email = ref("");
 const password = ref("");
 
 function signup() {
-  store.dispatch("auth/signup", { email: email.value, password: password.value , router });
+  store.dispatch("auth/signup", { name: Fname.value, email: email.value, password: password.value , router });
   email.value =""
   password.value =""
+  Fname.value =""
 }
 </script>
 

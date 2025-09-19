@@ -6,7 +6,7 @@ const profile = {
   namespaced: true,
   state() {
     return {
-      user: null,
+      user: JSON.parse(localStorage.getItem("user")) || null,
       loading: false,
       error: null,
     };
@@ -14,10 +14,11 @@ const profile = {
   mutations: {
     set_user(state, user) {
       state.user = user;
+      localStorage.setItem("user", JSON.stringify(state.user));
     },
-    update_user(state, payload) {
-      state.user.email = payload.email;
-      if (payload.password) state.user.password = payload.password;
+    update_user(state, user) {
+      state.user = user
+      localStorage.setItem("user", JSON.stringify(state.user));
     },
     set_loading(state, status) {
       state.loading = status;
@@ -43,7 +44,7 @@ const profile = {
       commit("set_loading", true);
       try {
         const res = await axios.patch(`${API_URL}/profile`, { user: payload });
-        commit("update_user", res.data);
+        commit("update_user", res.data.user);
         return { success: true };
       } catch (err) {
         commit("set_error", err.response?.data || { base: ["Something went wrong"] });

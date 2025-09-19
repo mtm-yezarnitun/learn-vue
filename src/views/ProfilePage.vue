@@ -6,6 +6,10 @@
 
     <form v-else @submit.prevent="submitProfile">
       <div>
+        <label>Name:</label>
+        <input v-model="form.name" type="text" required />
+      </div>
+      <div>
         <label>Email:</label>
         <input v-model="form.email" type="email" required />
       </div>
@@ -30,6 +34,7 @@ import { reactive, computed, onMounted } from "vue";
 import store from "../stores/store";
 
 const form = reactive({
+  name: "",
   email: "",
   password: "",
   password_confirmation: "",
@@ -41,6 +46,7 @@ const currentUser = computed(() => store.getters["profile/currentUser"]);
 onMounted(async () => {
   await store.dispatch("profile/fetchProfile");
   if (currentUser.value) {
+    form.name = currentUser.value.name;
     form.email = currentUser.value.email;
   }
 });

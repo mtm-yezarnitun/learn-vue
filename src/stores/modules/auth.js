@@ -48,7 +48,7 @@ const auth = {
     async login({ commit }, { email, password ,router}) {
       commit("setLoading", true);
       try {
-        const res = await axios.post(`${API_URL}/login`, { user: { email, password } });
+        const res = await axios.post(`${API_URL}/login`, { user: { name ,email, password } });
         commit("setUser", res.data.user);
         commit("setToken", res.data.token);
         window.$toast.success ('Login Success!')
@@ -62,10 +62,10 @@ const auth = {
             commit("setLoading", false);
         }
     },
-    async signup({ commit }, { email, password ,router}) {
+    async signup({ commit }, { name ,email, password ,router}) {
       commit("setLoading", true);
       try {
-        await axios.post(`${API_URL}/signup`, { user: { email, password} });
+        await axios.post(`${API_URL}/signup`, { user: { name ,email, password} });
         window.$toast.success ('Success Registrations! Please Login using your Account !')
         router.push("/login");
 
