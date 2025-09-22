@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/admin/users"; // adjust your Rails API URL
+const API_URL = "http://localhost:3000/admin/users"; 
 const users = {
   namespaced: true,
   state: {

@@ -20,7 +20,7 @@
         </button>
       </div>
 
-      <form @submit.prevent="submitComment">
+      <form @submit.prevent="submitComment" class="cmt-form">
         <input v-model="newComment" placeholder="Add a comment..." />
         <button type="submit">Add</button>
       </form>
@@ -74,6 +74,15 @@ onMounted(async () => {
 .comments {
   margin-top: 20px;
 }
+
+.cmt-form input {
+  padding: 8px;
+  border: 1px solid #43e192;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: monospace;
+}
+
 .comment-card {
   border: 1px solid #43e192;
   border-radius: 6px;

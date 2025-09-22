@@ -66,7 +66,7 @@ const blog = {
       try {
         await axios.delete(`${API_URL}/posts/${id}`);
         commit("removePost", id);
-        window.$toast.error("Post Deleted Successfully!");
+        window.$toast.success("Post Deleted Successfully!");
       } catch (err) {
         commit("setError", err.message);
         window.$toast.error("Cannot Delete Someone else's Post!!");

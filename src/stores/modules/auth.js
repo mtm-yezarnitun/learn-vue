@@ -33,6 +33,10 @@ const auth = {
       state.token = null;
       localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("city");
+      localStorage.removeItem("country");
+      localStorage.removeItem("forecast");
+      localStorage.removeItem("weather");
       delete axios.defaults.headers.common["Authorization"];
     },
   },
@@ -48,14 +52,14 @@ const auth = {
     async login({ commit }, { email, password ,router}) {
       commit("setLoading", true);
       try {
-        const res = await axios.post(`${API_URL}/login`, { user: { name ,email, password } });
+        const res = await axios.post(`${API_URL}/login`, { user: { email, password } });
         commit("setUser", res.data.user);
         commit("setToken", res.data.token);
         window.$toast.success ('Login Success!')
     
         router.push("/dashboard");
         } catch (err) {
-            const errorMsg = err.response?.data?.message || err.response?.data?.errors?.join?.(", ") || err.message;
+            const errorMsg = err.response?.data?.message || err.response?.data?.error || err.response?.data?.error?.join?.(", ") || err.message || "Something went wrong";;
             commit("setError", errorMsg);
             window.$toast?.error(errorMsg);
         } finally {
