@@ -22,7 +22,7 @@ module Api
         if post.save
           render json: { status: 201, message: 'Post created', data: post.as_json.merge(user_email: current_user.email) }, status: :created
         else
-          render json: { status: 422, message: post.errors.full_messages.to_sentence }, status: :unprocessable_entity
+          render json: { status: 422, message: post.errors.full_messages.to_sentence , errors: post.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
