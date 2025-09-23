@@ -24,12 +24,22 @@ RSpec.describe "API::V1::Comments", type: :request do
   #post 
   describe "POST /api/v1/posts/:post_id/comments" do
     let(:valid_params) { { comment: { content: "New comment" } } }
+    let(:invalid_params) { { comment: { content: "" } } }
+
     it "creates a comment under the post" do
       expect { post "/api/v1/posts/#{post_record.id}/comments", params: valid_params }.to change(Comment, :count).by(1)
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
       expect(json["content"]).to eq("New comment")
       expect(json["user"]["email"]).to eq("user@example.com")
+    end
+    
+    it "cannot creates a comment with invalid params" do
+      expect { post "/api/v1/posts/#{post_record.id}/comments", params: invalid_params }.not_to change(Comment, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      json = JSON.parse(response.body)
+      expect(json).to have_key("errors")
+      expect(json["errors"]).to include("Content can't be blank")
     end
   end
 
