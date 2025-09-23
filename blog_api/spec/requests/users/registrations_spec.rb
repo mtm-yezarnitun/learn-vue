@@ -9,6 +9,7 @@ RSpec.describe "User Registration", type: :request do
           name: "Tester",
           email: "test@example.com",
           password: "password123",
+          password_confirmation: "password123",
         }
       }
     end
@@ -18,6 +19,7 @@ RSpec.describe "User Registration", type: :request do
           name: "",
           email: "bad-email",
           password: "short",
+          password_confirmation: "adadasq",
         }
       }
     end
@@ -26,9 +28,7 @@ RSpec.describe "User Registration", type: :request do
       expect {
         post "/signup", params: valid_params
       }.to change(User, :count).by(1)
-
       expect(response).to have_http_status(:created)
-
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Signed up successfully.")
       expect(json["user"]["email"]).to eq("test@example.com")

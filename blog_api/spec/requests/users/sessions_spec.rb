@@ -29,12 +29,12 @@ RSpec.describe "Login Sessions", type: :request do
     #delete
     describe "DELETE /logout" do
         it "logs out the user" do
-        post "/login", params: { user: { email: user.email, password: "password123" } }
-        token = JSON.parse(response.body)["token"]
-        delete "/logout", headers: { "Authorization" => "Bearer #{token}" }
-        expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json["message"]).to eq("Logged out successfully.")
+          post "/login", params: { user: { email: user.email, password: "password123" } }
+          token = JSON.parse(response.body)["token"]
+          delete "/logout", headers: { "Authorization" => "Bearer #{token}" }
+          expect(response).to have_http_status(:ok)
+          json = JSON.parse(response.body)
+          expect(json["message"]).to eq("Logged out successfully.")
         end
     end
 end

@@ -2,15 +2,16 @@ require 'rails_helper'
 
 RSpec.describe "Profiles", type: :request do
   let!(:user) { User.create!(email: "user@example.com", password: "password123", name: "Old Name") }
-
-  before do
-    allow_any_instance_of(Api::V1::ProfilesController).to receive(:current_user).and_return(user)
+  let(:token) do
+    post "/login", params: { user: { email: user.email, password: "password123" } }
+    JSON.parse(response.body)["token"]
   end
-
+  let(:headers) { { "Authorization" => "Bearer #{token}" } }
+  
   #get
   describe "GET /api/v1/profile" do
     it "returns the current user profile" do
-      get "/api/v1/profile"
+      get "/api/v1/profile" ,headers: headers
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["email"]).to eq("user@example.com")
@@ -41,7 +42,7 @@ RSpec.describe "Profiles", type: :request do
     end
 
     it "updates profile including password with valid data" do
-        patch "/api/v1/profile", params: valid_params
+        patch "/api/v1/profile", params: valid_params ,headers: headers
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json["message"]).to eq("Updated successfully.")
@@ -50,7 +51,7 @@ RSpec.describe "Profiles", type: :request do
     end
 
     it "returns errors with invalid data" do
-        patch "/api/v1/profile", params: invalid_params
+        patch "/api/v1/profile", params: invalid_params ,headers: headers
         expect(response).to have_http_status(:unprocessable_entity)
         json = JSON.parse(response.body)
         expect(json).to have_key("password")
@@ -81,7 +82,7 @@ RSpec.describe "Profiles", type: :request do
     end
 
     it "fully updates the profile with valid data" do
-      put "/api/v1/profile", params: full_update_params
+      put "/api/v1/profile", params: full_update_params ,headers: headers
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Updated successfully.")
@@ -91,7 +92,7 @@ RSpec.describe "Profiles", type: :request do
     end
 
     it "returns errors when full update data is invalid" do
-      put "/api/v1/profile", params: invalid_full_update_params
+      put "/api/v1/profile", params: invalid_full_update_params ,headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("email")

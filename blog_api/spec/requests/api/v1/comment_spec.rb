@@ -5,15 +5,16 @@ RSpec.describe "API::V1::Comments", type: :request do
   let!(:other_user) { User.create!(email: "other@example.com", password: "password123") }
   let!(:post_record) { Post.create!(title: "Hello", body: "World", user: user) }
   let!(:comment) { Comment.create!(content: "First comment", post: post_record, user: user) }
-
-  before do
-    allow_any_instance_of(Api::V1::CommentsController).to receive(:current_user).and_return(user)
+  let(:token) do
+    post "/login", params: { user: { email: user.email, password: "password123" } }
+    JSON.parse(response.body)["token"]
   end
+  let(:headers) { { "Authorization" => "Bearer #{token}" } }
 
   #get all
   describe "GET /api/v1/posts/:post_id/comments" do
     it "lists all comments for a post" do
-      get "/api/v1/posts/#{post_record.id}/comments"
+      get "/api/v1/posts/#{post_record.id}/comments" ,headers: headers
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json.first["content"]).to eq("First comment")
@@ -27,7 +28,7 @@ RSpec.describe "API::V1::Comments", type: :request do
     let(:invalid_params) { { comment: { content: "" } } }
 
     it "creates a comment under the post" do
-      expect { post "/api/v1/posts/#{post_record.id}/comments", params: valid_params }.to change(Comment, :count).by(1)
+      expect { post "/api/v1/posts/#{post_record.id}/comments", params: valid_params,headers: headers }.to change(Comment, :count).by(1)
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
       expect(json["content"]).to eq("New comment")
@@ -35,7 +36,7 @@ RSpec.describe "API::V1::Comments", type: :request do
     end
     
     it "cannot creates a comment with invalid params" do
-      expect { post "/api/v1/posts/#{post_record.id}/comments", params: invalid_params }.not_to change(Comment, :count)
+      expect { post "/api/v1/posts/#{post_record.id}/comments", params: invalid_params ,headers: headers}.not_to change(Comment, :count)
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
@@ -46,7 +47,7 @@ RSpec.describe "API::V1::Comments", type: :request do
   #delete
   describe "DELETE /api/v1/posts/:post_id/comments/:id" do
     it "deletes a comment if owner" do
-      expect {delete "/api/v1/posts/#{post_record.id}/comments/#{comment.id}"}.to change(Comment, :count).by(-1)
+      expect {delete "/api/v1/posts/#{post_record.id}/comments/#{comment.id}",headers: headers}.to change(Comment, :count).by(-1)
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Comment deleted successfully.")

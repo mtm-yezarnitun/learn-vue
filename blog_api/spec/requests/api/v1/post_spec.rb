@@ -3,15 +3,17 @@ require 'rails_helper'
 RSpec.describe "Posts", type: :request do
   let!(:user) { User.create!(email: "user@example.com", password: "password123") }
   let!(:post_record) { Post.create!(title: "Hello", body: "World", user: user) }
-
-  before do
-    allow_any_instance_of(Api::V1::PostsController).to receive(:current_user).and_return(user)
+  let(:token) do
+    post "/login", params: { user: { email: user.email, password: "password123" } }
+    JSON.parse(response.body)["token"]
   end
+  let(:headers) { { "Authorization" => "Bearer #{token}" } }
 
+  
   #get all
   describe "GET /api/v1/posts" do
     it "lists all posts" do
-      get "/api/v1/posts"
+      get "/api/v1/posts" ,headers: headers
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json.first["title"]).to eq("Hello")
@@ -21,7 +23,7 @@ RSpec.describe "Posts", type: :request do
   #get one
   describe "GET /api/v1/posts/:id" do
     it "returns a single post" do
-      get "/api/v1/posts/#{post_record.id}"   
+      get "/api/v1/posts/#{post_record.id}" ,headers: headers
       expect(response).to have_http_status(:ok)  
       json = JSON.parse(response.body)        
       expect(json["title"]).to eq("Hello")   
@@ -35,14 +37,14 @@ RSpec.describe "Posts", type: :request do
     let(:invalid_params) { { post: { title: "", body: "    " } } }
 
     it "creates a post in the database" do
-      expect{ post "/api/v1/posts", params: valid_params }.to change(Post, :count).by(1)
+      expect{ post "/api/v1/posts", params: valid_params ,headers: headers}.to change(Post, :count).by(1) 
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Post created")
     end
 
     it "cannot creates a post with invalid params" do
-      expect{ post "/api/v1/posts", params: invalid_params }.not_to change(Post, :count)
+      expect{ post "/api/v1/posts", params: invalid_params ,headers: headers }.not_to change(Post, :count)
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
@@ -56,13 +58,13 @@ RSpec.describe "Posts", type: :request do
     let(:invalid_params) { { post: { title: "" } } }
 
     it "updates a post" do
-      patch "/api/v1/posts/#{post_record.id}", params: update_params
+      patch "/api/v1/posts/#{post_record.id}", params: update_params ,headers: headers
       expect(response).to have_http_status(:ok)
       expect(post_record.reload.title).to eq("Updated")
     end
 
     it "cannot updates a post with invalid params" do
-      patch "/api/v1/posts/#{post_record.id}", params: invalid_params
+      patch "/api/v1/posts/#{post_record.id}", params: invalid_params ,headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
@@ -76,7 +78,7 @@ RSpec.describe "Posts", type: :request do
     let(:invalid_put_params) { { post: { title: "", body: "" } } }
 
     it "fully updates a post" do
-      put "/api/v1/posts/#{post_record.id}", params: put_params
+      put "/api/v1/posts/#{post_record.id}", params: put_params ,headers: headers
       expect(response).to have_http_status(:ok)
       post_record.reload
       expect(post_record.title).to eq("Fully Updated")
@@ -84,7 +86,7 @@ RSpec.describe "Posts", type: :request do
     end
 
     it "cannot fully update a post with invalid params" do
-      put "/api/v1/posts/#{post_record.id}", params: invalid_put_params
+      put "/api/v1/posts/#{post_record.id}", params: invalid_put_params ,headers: headers
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
@@ -96,7 +98,7 @@ RSpec.describe "Posts", type: :request do
   #delete
   describe "DELETE /api/v1/posts/:id" do
     it "deletes a post from the database" do
-      expect {delete "/api/v1/posts/#{post_record.id}"}.to change(Post, :count).by(-1)
+      expect {delete "/api/v1/posts/#{post_record.id}" ,headers: headers }.to change(Post, :count).by(-1)
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Post deleted successfully.")
