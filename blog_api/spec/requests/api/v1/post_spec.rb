@@ -47,7 +47,6 @@ RSpec.describe "Posts", type: :request do
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
       expect(json["errors"]).to include("Title can't be blank")
-
     end
   end
 
