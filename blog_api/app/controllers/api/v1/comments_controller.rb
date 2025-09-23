@@ -1,10 +1,10 @@
 module Api
   module V1
     class CommentsController < ApplicationController
-      before_action :authenticate_user!
+      # before_action :authenticate_user!
       before_action :set_post
       before_action :set_comment, only: [:destroy]
-      before_action :authorize_comment_owner!, only: [:destroy]
+      # before_action :authorize_comment_owner!, only: [:destroy]
 
       def index
         comments = @post.comments.includes(:user)
@@ -26,7 +26,6 @@ module Api
       end
 
       private
-
 
       def set_post
         @post = Post.find_by(id: params[:post_id])

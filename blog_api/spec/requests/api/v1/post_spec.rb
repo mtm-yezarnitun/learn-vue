@@ -8,6 +8,8 @@ RSpec.describe "Posts", type: :request do
     allow_any_instance_of(Api::V1::PostsController).to receive(:current_user).and_return(user)
   end
 
+
+  #get all
   describe "GET /api/v1/posts" do
     it "lists all posts" do
       get "/api/v1/posts"
@@ -17,6 +19,7 @@ RSpec.describe "Posts", type: :request do
     end
   end
 
+  #get one
   describe "GET /api/v1/posts/:id" do
     it "returns a single post" do
       get "/api/v1/posts/#{post_record.id}"   
@@ -27,6 +30,7 @@ RSpec.describe "Posts", type: :request do
     end
   end
 
+  #post 
   describe "POST /api/v1/posts" do
     let(:valid_params) { { post: { title: "New Post", body: "Content" } } }
     it "creates a post in the database" do
@@ -37,6 +41,7 @@ RSpec.describe "Posts", type: :request do
     end
   end
 
+  #patch
   describe "PATCH /api/v1/posts/:id" do
     let(:update_params) { { post: { title: "Updated" } } }
     it "updates a post" do
@@ -46,6 +51,7 @@ RSpec.describe "Posts", type: :request do
     end
   end
 
+  #delete
   describe "DELETE /api/v1/posts/:id" do
     it "deletes a post from the database" do
       expect {delete "/api/v1/posts/#{post_record.id}"}.to change(Post, :count).by(-1)
