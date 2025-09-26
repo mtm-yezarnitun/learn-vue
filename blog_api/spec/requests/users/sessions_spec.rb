@@ -16,14 +16,14 @@ RSpec.describe "Login Sessions", type: :request do
         expect(json["message"]).to eq("Logged in successfully.")
         expect(json["token"]).to be_present
         expect(json["user"]["email"]).to eq(user.email)
-        end
+      end
 
       it "fails with invalid credentials" do
         post "/login", params: invalid_params
         expect(response).to have_http_status(:unauthorized)
         json = JSON.parse(response.body)
         expect(json["error"]).to include("Invalid Email or password")
-        end
+      end
     end
 
     #delete

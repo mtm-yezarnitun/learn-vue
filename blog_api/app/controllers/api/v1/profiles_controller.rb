@@ -1,7 +1,7 @@
 module Api
   module V1
     class ProfilesController < ApplicationController
-      # before_action :authenticate_user!
+      before_action :authenticate_user!
 
       # GET /api/v1/profile
       def show
