@@ -63,7 +63,7 @@ const auth = {
             commit("setError", errorMsg);
             window.$toast?.error(errorMsg);
         } finally {
-            commit("setLoading", false);
+            commit("set Loading", false);
         }
     },
     async signup({ commit }, { name ,email, password ,router}) {

@@ -6,14 +6,16 @@
     <button type="submit">Login</button>
   </form>
 
+  <div id="googleBtn"></div>
+
   <router-link to="/register">Register</router-link>
-  
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
+import axios from "axios";
 
 const router = useRouter();
 const store = useStore();
@@ -21,11 +23,56 @@ const email = ref("");
 const password = ref("");
 
 function login() {
-  store.dispatch("auth/login", { email: email.value, password: password.value ,router});
-  email.value =""
-  password.value =""
-
+  store.dispatch("auth/login", { email: email.value, password: password.value, router });
+  email.value = "";
+  password.value = "";
 }
+
+function handleGoogleResponse(response) {
+
+  if (!response.credential) {
+    console.error("No id_token received");
+    return;
+  }
+
+  axios.post("http://localhost:3000/api/v1/google_login",
+    { id_token: response.credential },
+    { headers: { "Content-Type": "application/json" } }
+  ).then(res => {
+    store.commit("auth/setToken", res.data.token);
+    store.commit("auth/setUser", res.data.user);
+    window.$toast.success('Google Account Logged in successfully!')
+    router.push("/dashboard");
+    
+  }).catch(err => {
+    console.error("Google login failed", err.response?.data || err);
+  });
+}
+
+onMounted(() => {
+  window.google.accounts.id.initialize({
+    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    callback: handleGoogleResponse
+  });
+
+  window.google.accounts.id.renderButton(
+    document.getElementById("googleBtn"),
+    { theme: "outline", size: "large" }
+  );
+});
+
+
+
+const googleLoginUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+  new URLSearchParams({
+    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    redirect_uri: import.meta.env.VITE_GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'openid email profile',
+    access_type: 'offline',
+    prompt: 'consent'
+  }).toString();
+
 </script>
 
 <style scoped>
@@ -39,7 +86,7 @@ function login() {
   align-items: center;
 }
 
-.login-form  input{
+.login-form input {
   width: 100%;
   padding: 8px;
   border: 1px solid #43e192;
@@ -48,8 +95,7 @@ function login() {
   font-family: monospace;
 }
 
-
-.login-form  button {
+.login-form button {
   width: 100px;
   padding: 8px;
   background-color: #43e192;
@@ -59,9 +105,8 @@ function login() {
   cursor: pointer;
 }
 
-.login-form  button:hover {
+.login-form button:hover {
   background-color: #1e1e1e;
   border: 1px solid #43e192;
 }
-
 </style>
