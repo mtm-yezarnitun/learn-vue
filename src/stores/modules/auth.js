@@ -1,5 +1,13 @@
 import axios from "axios";
 
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+}
+
 const API_URL = "http://localhost:3000";
 
 const auth = {
@@ -82,6 +90,7 @@ const auth = {
             commit("setLoading", false);
         }
     },
+
     async logout({ commit },{router}) {
       try {
         await axios.delete(`${API_URL}/logout`);

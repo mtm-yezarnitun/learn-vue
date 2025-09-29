@@ -59,7 +59,6 @@ const form = ref({
 
 const users = computed(() => store.getters["users/allUsers"]);
 const error = computed(() => store.getters["users/getError"]);
-
 const onSubmit = async () => {
   if (form.value.id) {
     store.dispatch("users/updateUser" ,{ id: form.value.id, userData: form.value });

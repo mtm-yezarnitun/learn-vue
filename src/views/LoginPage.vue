@@ -6,6 +6,8 @@
     <button type="submit">Login</button>
   </form>
 
+  <button class="redirectBtn" @click="loginWithGoogle">Sign in with Google</button>
+
   <div id="googleBtn"></div>
 
   <router-link to="/register">Register</router-link>
@@ -22,6 +24,10 @@ const store = useStore();
 const email = ref("");
 const password = ref("");
 
+function loginWithGoogle() {
+  window.location.href = `http://localhost:3000/api/v1/google_login`
+}
+
 function login() {
   store.dispatch("auth/login", { email: email.value, password: password.value, router });
   email.value = "";
@@ -34,13 +40,17 @@ function handleGoogleResponse(response) {
     console.error("No id_token received");
     return;
   }
-
   axios.post("http://localhost:3000/api/v1/google_login",
     { id_token: response.credential },
     { headers: { "Content-Type": "application/json" } }
   ).then(res => {
     store.commit("auth/setToken", res.data.token);
-    store.commit("auth/setUser", res.data.user);
+
+    axios.get("http://localhost:3000/api/v1/profile" , {headers: { Authorization: `Bearer ${res.data.token}` }})
+    .then(res => {
+      store.commit("auth/setUser", res.data);
+    });
+
     window.$toast.success('Google Account Logged in successfully!')
     router.push("/dashboard");
     
@@ -108,5 +118,10 @@ const googleLoginUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
 .login-form button:hover {
   background-color: #1e1e1e;
   border: 1px solid #43e192;
+}
+
+.redirectBtn ,
+#googleBtn {
+  margin-bottom: 20px;
 }
 </style>

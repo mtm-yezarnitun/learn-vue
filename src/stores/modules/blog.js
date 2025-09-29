@@ -6,6 +6,7 @@ const blog = {
   namespaced: true,
   state() {
     return {
+      user: JSON.parse(localStorage.getItem("user")) || null,
       posts: [],
       loading: false,
       error: null,

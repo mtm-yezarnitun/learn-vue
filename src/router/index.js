@@ -13,6 +13,7 @@ import Login from '../views/LoginPage.vue'
 import Register from '../views/RegisterPage.vue'
 import User from '../views/Users.vue'
 import Profile from '../views/ProfilePage.vue'
+import AuthSuccess from "../views/AuthSuccess.vue";
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -28,7 +29,8 @@ const routes = [
   { path: "/login", component: Login },
   { path: "/register", component: Register },
   { path: "/admin/users", component: User },
-  { path: "/profile", component: Profile }
+  { path: "/profile", component: Profile },
+  { path: "/auth/success", component: AuthSuccess }
 ]
 
 const router = createRouter({
@@ -37,7 +39,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from,next) => {
-  const publicPages = ['/login', '/register']
+  const publicPages = ['/login', '/register', '/auth/success']
   const authRequired = !publicPages.includes(to.path)
   const loggedIn = store.getters['auth/isAuthenticated']
 

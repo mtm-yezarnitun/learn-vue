@@ -62,7 +62,7 @@ const users = {
           headers: { Authorization: `Bearer ${token}` },
         });
         window.$toast.success("User Created Successfully!");
-        commit("addUser", res.data);
+        commit("addUser", res.data.user);
 
       } catch (err) {
         commit("setError", err.response?.data || err.message);

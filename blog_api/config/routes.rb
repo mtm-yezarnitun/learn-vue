@@ -14,6 +14,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       post 'google_login', to: 'google_auth#login'
+
+      get 'google_login', to: 'google_auth#redirect'
+      get 'google_callback', to: 'google_auth#callback'
       
       resources :posts do
         resources :comments, only: [:index, :create, :destroy]
