@@ -14,6 +14,7 @@ import Register from '../views/RegisterPage.vue'
 import User from '../views/Users.vue'
 import Profile from '../views/ProfilePage.vue'
 import AuthSuccess from "../views/AuthSuccess.vue";
+import Calendar from "../views/CalendarPage.vue";
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -30,7 +31,8 @@ const routes = [
   { path: "/register", component: Register },
   { path: "/admin/users", component: User },
   { path: "/profile", component: Profile },
-  { path: "/auth/success", component: AuthSuccess }
+  { path: "/auth/success", component: AuthSuccess },
+  { path: "/calendar", component: Calendar }
 ]
 
 const router = createRouter({

@@ -1,0 +1,598 @@
+<template>
+  <div class="calendar-container">
+    <div class="calendar-header">
+      <h2>📅 Google Calendar</h2>
+      <div class="calendar-actions">
+        <button 
+          @click="fetchEvents" 
+          class="btn btn-primary" 
+          :disabled="loading"
+        >
+          {{ loading ? 'Loading...' : 'Refresh Events' }}
+        </button>
+        <button @click="showEventForm = true" class="btn btn-success">
+          + New Event
+        </button>
+      </div>
+    </div>
+
+    <div v-if="showEventForm" class="event-form-overlay">
+      <div class="event-form">
+        <h3>Create New Event</h3>
+        <form @submit.prevent="createEvent">
+          <div class="form-group">
+            <label>Title:</label>
+            <input 
+              v-model="newEvent.title" 
+              type="text" 
+              required 
+              class="form-input"
+              placeholder="Meeting with team"
+            >
+          </div>
+          <div class="form-group">
+            <label>Description:</label>
+            <textarea 
+              v-model="newEvent.description" 
+              class="form-textarea"
+              placeholder="Add details about your event..."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label>Start Time:</label>
+            <input 
+              v-model="newEvent.start_time" 
+              type="datetime-local" 
+              required 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label>End Time:</label>
+            <input 
+              v-model="newEvent.end_time" 
+              type="datetime-local" 
+              required 
+              class="form-input"
+            >
+          </div>
+          <div class="form-actions">
+            <button 
+              type="submit" 
+              class="btn btn-primary" 
+              :disabled="creatingEvent"
+            >
+              {{ creatingEvent ? 'Creating...' : 'Create Event' }}
+            </button>
+            <button 
+              type="button" 
+              @click="cancelCreate" 
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="error" class="error-message">
+      {{ error }}
+      <button @click="clearError" class="btn-close">×</button>
+    </div>
+
+    <div class="events-section">
+      <h3>Your Upcoming Events ({{ events.length }})</h3>
+      
+      <div v-if="loading && events.length === 0" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your calendar events...</p>
+      </div>
+      
+      <div v-else-if="events.length === 0" class="no-events">
+        <p>No upcoming events found.</p>
+        <p v-if="!loading">Try creating your first event!</p>
+      </div>
+      
+      <div v-else class="events-grid">
+        <div 
+          v-for="event in events" 
+          :key="event.id" 
+          class="event-card"
+          :class="{ 'deleting': deletingEvents.includes(event.id) }"
+        >
+          <div class="event-header">
+            <h4 class="event-title">{{ event.summary || event.title }}</h4>
+            <div class="event-actions">
+              <button 
+                @click="deleteEvent(event.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(event.id)"
+                :title="'Delete ' + (event.title || 'event')"
+              >
+                <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+              </button>
+            </div>
+          </div>
+          
+          <p v-if="event.description" class="event-description">
+            {{ event.description }}
+          </p>
+          <div class="event-times">
+            <div class="event-time">
+              <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
+            </div>
+            <div class="event-time">
+              <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
+            </div>
+          </div>
+          <a 
+            v-if="event.html_link" 
+            :href="event.html_link" 
+            target="_blank" 
+            class="event-link"
+          >
+            View in Google Calendar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="modal-overlay">
+      <div class="modal">
+        <h3>Delete Event</h3>
+        <p>Are you sure you want to delete "<strong>{{ eventToDelete?.title || eventToDelete?.summary }}</strong>"?</p>
+        <div class="modal-actions">
+          <button 
+            @click="confirmDelete" 
+            class="btn btn-danger"
+            :disabled="deletingEvent"
+          >
+            {{ deletingEvent ? 'Deleting...' : 'Yes, Delete' }}
+          </button>
+          <button 
+            @click="cancelDelete" 
+            class="btn btn-secondary"
+            :disabled="deletingEvent"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+
+const store = useStore();
+const router = useRouter();
+
+const showEventForm = ref(false);
+const showDeleteConfirm = ref(false);
+const eventToDelete = ref(null);
+const deletingEvents = ref([]); 
+
+const newEvent = ref({
+  title: '',
+  description: '',
+  start_time: '',
+  end_time: ''
+});
+
+const events = computed(() => store.getters['calendar/events']);
+const loading = computed(() => store.getters['calendar/loading']);
+const creatingEvent = computed(() => store.getters['calendar/creatingEvent']);
+const deletingEvent = computed(() => store.getters['calendar/deletingEvent']);
+const error = computed(() => store.getters['calendar/error']);
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
+
+
+onMounted(() => {
+  if (!isAuthenticated.value) {
+    router.push('/login');
+    return;
+  }
+  fetchEvents();
+});
+
+async function fetchEvents() {
+  if (!isAuthenticated.value) {
+    router.push('/login');
+    return;
+  }
+  await store.dispatch('calendar/fetchEvents');
+}
+
+async function createEvent() {
+  if (!isAuthenticated.value) {
+    router.push('/login');
+    return;
+  }
+  try {
+    await store.dispatch('calendar/createEvent', newEvent.value);
+    window.$toast.success('Event created successfully!');
+    cancelCreate();
+  } catch (error) {
+    console.error('Failed to create event:', error);
+  }
+}
+
+function deleteEvent(eventId) {
+  const event = events.value.find(e => e.id === eventId);
+  eventToDelete.value = event;
+  showDeleteConfirm.value = true;
+}
+
+async function confirmDelete() {
+  if (!eventToDelete.value) return;
+  
+  const eventId = eventToDelete.value.id;
+  deletingEvents.value.push(eventId);
+  
+  try {
+    await store.dispatch('calendar/deleteEvent', eventId);
+    window.$toast.success('Event deleted successfully!');
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+  } finally {
+    const index = deletingEvents.value.indexOf(eventId);
+    if (index > -1) {
+      deletingEvents.value.splice(index, 1);
+    }
+    cancelDelete();
+  }
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false;
+  eventToDelete.value = null;
+}
+
+function cancelCreate() {
+  showEventForm.value = false;
+  newEvent.value = {
+    title: '',
+    description: '',
+    start_time: '',
+    end_time: ''
+  };
+}
+
+function clearError() {
+  store.dispatch('calendar/clearError');
+}
+
+function formatDateTime(dateTimeString) {
+  if (!dateTimeString) return 'N/A';
+  return new Date(dateTimeString).toLocaleString();
+}
+</script>
+
+<style scoped>
+.calendar-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.event-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.event-form {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  height: 80px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.events-section {
+  margin-top: 20px;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.event-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.event-card.deleting {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.event-title {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.event-actions {
+  flex-shrink: 0;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-size: 16px;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #ffeaea;
+}
+
+.btn-delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.delete-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #d63031;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.event-description {
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+.event-times {
+  margin-bottom: 15px;
+}
+
+.event-time {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.event-link {
+  color: #4285f4;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.event-link:hover {
+  text-decoration: underline;
+}
+
+.no-events {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4285f4;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: #ffeaea;
+  color: #d63031;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #d63031;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.modal p {
+  margin-bottom: 25px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-danger {
+  background: #d63031;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c02929;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  min-width: 100px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #4285f4;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3367d6;
+}
+
+.btn-success {
+  background: #34a853;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #2e8b47;
+}
+
+.btn-secondary {
+  background: #666;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #555;
+}
+</style>

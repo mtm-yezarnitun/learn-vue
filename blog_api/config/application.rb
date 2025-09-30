@@ -46,6 +46,9 @@ module BlogApi
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
 
+    config.time_zone = 'Asia/Yangon'
+    config.active_record.default_timezone = :local
+
     # Allow frontend (Vue) to access the API
     config.middleware.insert_before 0, Rack::Cors do
       allow do

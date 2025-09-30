@@ -26,13 +26,18 @@
         <li>
           <router-link to="/counter">Counter</router-link>
         </li>
+        <li>
+          <router-link to="/calendar">Calendar</router-link>
+        </li>
       </ul>
 
       <div class="user-info">
         <template v-if="isAuthenticated">
-           <router-link v-if="user.role == 'admin'" to="/admin/users"> Manage </router-link>
-          <router-link to="/profile"><span>{{ user.email }}</span></router-link>
-          <button @click="logout">Logout</button>
+          <div v-if="user">
+            <router-link v-if="user.role == 'admin'" to="/admin/users"> Manage </router-link>
+            <router-link to="/profile"><span>{{ user.email }}</span></router-link>
+            <button @click="logout">Logout</button>
+          </div>
         </template>
         <template v-else>
           <span>

@@ -17,6 +17,10 @@ Rails.application.routes.draw do
 
       get 'google_login', to: 'google_auth#redirect'
       get 'google_callback', to: 'google_auth#callback'
+
+      get '/calendar/events', to: 'calendar#events'
+      post '/calendar/events', to: 'calendar#create_event'
+      delete '/calendar/events/:id', to: 'calendar#destroy'
       
       resources :posts do
         resources :comments, only: [:index, :create, :destroy]

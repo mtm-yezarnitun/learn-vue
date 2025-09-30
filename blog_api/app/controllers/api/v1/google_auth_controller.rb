@@ -38,7 +38,7 @@ class Api::V1::GoogleAuthController < ApplicationController
   def redirect
     client_id = ENV["GOOGLE_CLIENT_ID"]
     redirect_uri = "http://localhost:3000/api/v1/google_callback"
-    scope = "openid email profile"
+    scope = "openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events"
 
     url = "#{GOOGLE_AUTH_URL}?" + {
       client_id: client_id,
@@ -46,7 +46,7 @@ class Api::V1::GoogleAuthController < ApplicationController
       response_type: "code",
       scope: scope,
       access_type: "offline",
-      prompt: "select_account"
+      prompt: "consent"
     }.to_query
 
     redirect_to url, allow_other_host: true
@@ -59,6 +59,10 @@ class Api::V1::GoogleAuthController < ApplicationController
     token_data = exchange_code_for_token(code)
     id_token = token_data["id_token"]
 
+    access_token = token_data["access_token"]
+    refresh_token = token_data["refresh_token"] 
+    expires_at = Time.now.utc + token_data["expires_in"].to_i
+
     payload = verify_google_id_token(id_token)
     return render json: { error: "Invalid ID token" }, status: :unauthorized unless payload
 
@@ -68,6 +72,12 @@ class Api::V1::GoogleAuthController < ApplicationController
     user.provider = "google_oauth2"
     user.uid = payload["sub"]
     user.role = 'user'
+
+
+    user.google_access_token = access_token
+    user.google_refresh_token = refresh_token
+    user.google_token_expires_at = expires_at
+
     user.save!
 
     jwt, _ = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil)

@@ -17,6 +17,7 @@ gem 'devise'
 gem 'devise-jwt'
 gem 'google-id-token'
 gem 'omniauth-google-oauth2'
+gem 'google-apis-calendar_v3'
 gem 'dotenv-rails', '~> 2.1', '>= 2.1.1'
 
 gem 'tzinfo-data', platforms: %i[windows jruby]
