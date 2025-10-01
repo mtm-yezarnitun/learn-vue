@@ -6,9 +6,10 @@
     <button type="submit">Login</button>
   </form>
 
-  <button class="redirectBtn" @click="loginWithGoogle">Sign in with Google</button>
+  <button class="redirectBtn" @click="loginGoogle">Sign in with Google</button>
+  <button class="redirectBtn" @click="loginWithGoogle">Pop with Google</button>
 
-  <div id="googleBtn"></div>
+  <!-- <div id="googleBtn"></div> -->
 
   <router-link to="/register">Register</router-link>
 </template>
@@ -24,7 +25,45 @@ const store = useStore();
 const email = ref("");
 const password = ref("");
 
+let tokenClient;
+
 function loginWithGoogle() {
+  if (!tokenClient) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: "openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+      prompt: "consent",
+      callback: async (tokenResponse) => {
+        if (!tokenResponse.access_token) {
+          console.error("No access token received");
+          return;
+        }
+
+        try {
+          const res = await axios.post("http://localhost:3000/api/v1/google_login", {
+            access_token: tokenResponse.access_token
+          });
+
+          store.commit("auth/setToken", res.data.token);
+
+          const profile = await axios.get("http://localhost:3000/api/v1/profile", {
+            headers: { Authorization: `Bearer ${res.data.token}` }
+          });
+          store.commit("auth/setUser", profile.data);
+
+          window.$toast.success("Google Account Logged in successfully!");
+          router.push("/dashboard");
+        } catch (err) {
+          console.error("Google login failed", err.response?.data || err);
+        }
+      },
+    });
+  }
+
+  tokenClient.requestAccessToken();
+}
+
+function loginGoogle() {
   window.location.href = `http://localhost:3000/api/v1/google_login`
 }
 
@@ -33,43 +72,6 @@ function login() {
   email.value = "";
   password.value = "";
 }
-
-function handleGoogleResponse(response) {
-
-  if (!response.credential) {
-    console.error("No id_token received");
-    return;
-  }
-  axios.post("http://localhost:3000/api/v1/google_login",
-    { id_token: response.credential },
-    { headers: { "Content-Type": "application/json" } }
-  ).then(res => {
-    store.commit("auth/setToken", res.data.token);
-
-    axios.get("http://localhost:3000/api/v1/profile" , {headers: { Authorization: `Bearer ${res.data.token}` }})
-    .then(res => {
-      store.commit("auth/setUser", res.data);
-    });
-
-    window.$toast.success('Google Account Logged in successfully!')
-    router.push("/dashboard");
-    
-  }).catch(err => {
-    console.error("Google login failed", err.response?.data || err);
-  });
-}
-
-onMounted(() => {
-  window.google.accounts.id.initialize({
-    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-    callback: handleGoogleResponse
-  });
-
-  window.google.accounts.id.renderButton(
-    document.getElementById("googleBtn"),
-    { theme: "outline", size: "large" }
-  );
-});
 
 </script>
 

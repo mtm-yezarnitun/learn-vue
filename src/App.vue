@@ -26,7 +26,7 @@
         <li>
           <router-link to="/counter">Counter</router-link>
         </li>
-        <li>
+        <li v-if="user && user.provider === 'google_oauth2'">
           <router-link to="/calendar">Calendar</router-link>
         </li>
       </ul>

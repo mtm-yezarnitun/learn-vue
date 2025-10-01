@@ -20,7 +20,7 @@
       <router-link to="/rating" class="card">Rating</router-link>
       <router-link to="/calculator" class="card">Calculator</router-link>
       <router-link to="/counter" class="card">Counter</router-link>
-      <router-link to="/calendar" class="card">Calendar</router-link>
+      <router-link v-if="user.provider == 'google_oauth2'" to="/calendar" class="card">Calendar</router-link>
     </section>
   </div>
 </template>
@@ -30,6 +30,7 @@ import { computed, onMounted } from "vue"
 import { useStore } from 'vuex'
 
 const store = useStore()
+const user = computed(() => store.getters["auth/user"]);
 const minDate = new Date().toISOString().split("T")[0]
 
 const todos = computed(() => store.getters['todo/todos'])

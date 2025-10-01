@@ -9,18 +9,21 @@ class Api::V1::GoogleAuthController < ApplicationController
   def login
     Rails.logger.info "Params received: #{params.inspect}"
 
-    id_token = params[:id_token]
-    return render json: { error: 'Missing id_token' }, status: :bad_request unless id_token
+    access_token = params[:access_token]
+    return render json: { error: 'Missing access_token' }, status: :bad_request unless access_token
 
-    payload = verify_google_id_token(id_token)
+    payload =fetch_userinfo(access_token)
     Rails.logger.info "Google payload: #{payload.inspect}"
     return render json: { error: 'Invalid ID token' }, status: :unauthorized unless payload
+    
 
     user = User.where(provider: 'google_oauth2', uid: payload['sub']).first_or_initialize
     user.email = payload['email']
     user.password ||= Devise.friendly_token[0, 20]
     user.provider = 'google_oauth2'
     user.uid = payload['sub']
+    user.google_access_token = access_token
+
     user.save!
 
     token, _ = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil)
@@ -86,6 +89,15 @@ class Api::V1::GoogleAuthController < ApplicationController
     rescue => e
       Rails.logger.error "Google OAuth redirect error: #{e.message}"
       redirect_to "http://localhost:5173/login"
+  end
+
+  def fetch_userinfo(access_token)
+    url = URI("https://www.googleapis.com/oauth2/v3/userinfo")
+    req = Net::HTTP::Get.new(url)
+    req["Authorization"] = "Bearer #{access_token}"
+
+    res = Net::HTTP.start(url.hostname, url.port, use_ssl: true) { |http| http.request(req) }
+    JSON.parse(res.body)
   end
 
   private

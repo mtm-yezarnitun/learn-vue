@@ -1,13 +1,5 @@
 import axios from "axios";
 
-function parseJwt(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch (e) {
-    return null;
-  }
-}
-
 const API_URL = "http://localhost:3000";
 
 const auth = {

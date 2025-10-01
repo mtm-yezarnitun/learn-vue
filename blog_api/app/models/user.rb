@@ -20,7 +20,6 @@ class User < ApplicationRecord
     end
 
     if token_expired?
-      
       if google_refresh_token.present?
         if refresh_google_token
           Rails.logger.info "✅ Token refreshed successfully"
