@@ -9,6 +9,7 @@ const calendar = {
       events: [],
       loading: false,
       creatingEvent: false,
+      deletingEvent: false,
       error: null
     };
   },
@@ -161,14 +162,14 @@ const calendar = {
     upcomingEvents: (state) => {
       const now = new Date();
       return state.events.filter(event => {
-        const eventDate = new Date(event.start_time || event.start?.dateTime);
+        const eventDate = new Date(event.start_time || event.start?.date_time);
         return eventDate >= now;
       });
     },
     pastEvents: (state) => {
       const now = new Date();
       return state.events.filter(event => {
-        const eventDate = new Date(event.start_time || event.start?.dateTime);
+        const eventDate = new Date(event.start_time || event.start?.date_time);
         return eventDate < now;
       });
     },

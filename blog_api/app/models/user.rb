@@ -51,7 +51,7 @@ class User < ApplicationRecord
     end
   end
 
-  def refresh_google_token!
+  def refresh_google_token
     return false unless google_refresh_token
     
     begin

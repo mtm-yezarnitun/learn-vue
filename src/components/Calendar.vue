@@ -1,7 +1,6 @@
 <template>
   <div class="calendar-container">
     <div class="calendar-header">
-      <h2>📅 Google Calendar</h2>
       <div class="calendar-actions">
         <button 
           @click="fetchEvents" 
@@ -139,6 +138,64 @@
       </div>
     </div>
 
+      <div class="events-section">
+      <h3>Your Past Events ({{ pastEvents.length }})</h3>
+      
+      <div v-if="loading && pastEvents.length === 0" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your past calendar events...</p>
+      </div>
+      
+      <div v-else-if="pastEvents.length === 0" class="no-events">
+        <p>No past events found.</p>
+        <p v-if="!loading">Try creating your first event!</p>
+      </div>
+      
+      <div v-else class="events-grid">
+        <div 
+          v-for="pEvent in pastEvents" 
+          :key="pEvent.id" 
+          class="event-card"
+          :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+        >
+          <div class="event-header">
+            <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
+            <div class="event-actions">
+              <button 
+                @click="deleteEvent(pEvent.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+                :title="'Delete ' + (pEvent.title || 'event')"
+              >
+                <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+              </button>
+            </div>
+          </div>
+          
+          <p v-if="pEvent.description" class="event-description">
+            {{ pEvent.description }}
+          </p>
+          <div class="event-times">
+            <div class="event-time">
+              <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
+            </div>
+            <div class="event-time">
+              <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
+            </div>
+          </div>
+          <a 
+            v-if="pEvent.html_link" 
+            :href="pEvent.html_link" 
+            target="_blank" 
+            class="event-link"
+          >
+            View in Google Calendar
+          </a>
+        </div>
+      </div>
+    </div>
+
     <div v-if="showDeleteConfirm" class="modal-overlay">
       <div class="modal">
         <h3>Delete Event</h3>
@@ -184,7 +241,8 @@ const newEvent = ref({
   end_time: ''
 });
 
-const events = computed(() => store.getters['calendar/events']);
+const events = computed(() => store.getters['calendar/upcomingEvents']);
+const pastEvents = computed(() => store.getters['calendar/pastEvents']);
 const loading = computed(() => store.getters['calendar/loading']);
 const creatingEvent = computed(() => store.getters['calendar/creatingEvent']);
 const deletingEvent = computed(() => store.getters['calendar/deletingEvent']);
@@ -223,7 +281,8 @@ async function createEvent() {
 }
 
 function deleteEvent(eventId) {
-  const event = events.value.find(e => e.id === eventId);
+  const event = events.value.find(e => e.id === eventId)
+             || pastEvents.value.find(e => e.id === eventId);
   eventToDelete.value = event;
   showDeleteConfirm.value = true;
 }
