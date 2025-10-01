@@ -6,16 +6,16 @@
     <button type="submit">Login</button>
   </form>
 
-  <button class="redirectBtn" @click="loginGoogle">Sign in with Google</button>
-  <button class="redirectBtn" @click="loginWithGoogle">Pop with Google</button>
+  <button class="redirectBtn" @click="loginGoogle">Sign in with Google ( Calendar API )</button>
 
-  <!-- <div id="googleBtn"></div> -->
+  <button class="redirectBtn" @click="loginWithGoogle">Pop with Google ( Access Token Only )</button>
+
 
   <router-link to="/register">Register</router-link>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import axios from "axios";
