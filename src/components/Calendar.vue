@@ -81,7 +81,66 @@
     </div>
 
     <div class="events-section">
-      <h3>Your Upcoming Events ({{ events.length }})</h3>
+      <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
+      
+      <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your past calendar events...</p>
+      </div>
+      
+      <div v-else-if="ongoingEvents.length === 0" class="no-events">
+        <p>No past events found.</p>
+        <p v-if="!loading">Try creating your first event!</p>
+      </div>
+      
+      <div v-else class="events-grid">
+        <div 
+          v-for="oEvent in ongoingEvents" 
+          :key="oEvent.id" 
+          class="event-card"
+          :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+        >
+          <div class="event-header">
+            <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
+            <div class="event-actions">
+              <button 
+                @click="deleteEvent(oEvent.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+                :title="'Delete ' + (oEvent.title || 'event')"
+              >
+                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+              </button>
+            </div>
+          </div>
+          
+          <p v-if="oEvent.description" class="event-description">
+            {{ oEvent.description }}
+          </p>
+          <div class="event-times">
+            <div class="event-time">
+              <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
+            </div>
+            <div class="event-time">
+              <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
+            </div>
+          </div>
+          <a 
+            v-if="oEvent.html_link" 
+            :href="oEvent.html_link" 
+            target="_blank" 
+            class="event-link"
+          >
+            View in Google Calendar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="events-section">
+      <h3>Upcoming Events ({{ events.length }})</h3>
       
       <div v-if="loading && events.length === 0" class="loading-state">
         <div class="spinner"></div>
@@ -138,8 +197,9 @@
       </div>
     </div>
 
-      <div class="events-section">
-      <h3>Your Past Events ({{ pastEvents.length }})</h3>
+
+    <div class="events-section">
+      <h3>Past Events ({{ pastEvents.length }})</h3>
       
       <div v-if="loading && pastEvents.length === 0" class="loading-state">
         <div class="spinner"></div>
@@ -196,6 +256,7 @@
       </div>
     </div>
 
+
     <div v-if="showDeleteConfirm" class="modal-overlay">
       <div class="modal">
         <h3>Delete Event</h3>
@@ -243,6 +304,7 @@ const newEvent = ref({
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
 const pastEvents = computed(() => store.getters['calendar/pastEvents']);
+const ongoingEvents = computed(() => store.getters['calendar/ongoingEvents']);
 const loading = computed(() => store.getters['calendar/loading']);
 const creatingEvent = computed(() => store.getters['calendar/creatingEvent']);
 const deletingEvent = computed(() => store.getters['calendar/deletingEvent']);
@@ -282,7 +344,8 @@ async function createEvent() {
 
 function deleteEvent(eventId) {
   const event = events.value.find(e => e.id === eventId)
-             || pastEvents.value.find(e => e.id === eventId);
+             || pastEvents.value.find(e => e.id === eventId) 
+             || ongoingEvents.value.find( e => e.id === eventId);
   eventToDelete.value = event;
   showDeleteConfirm.value = true;
 }

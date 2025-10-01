@@ -20,6 +20,7 @@
       <router-link to="/rating" class="card">Rating</router-link>
       <router-link to="/calculator" class="card">Calculator</router-link>
       <router-link to="/counter" class="card">Counter</router-link>
+      <router-link to="/calendar" class="card">Calendar</router-link>
     </section>
   </div>
 </template>

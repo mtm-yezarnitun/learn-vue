@@ -6,7 +6,7 @@ module Api::V1
       service = current_user.google_calendar_service
 
       if service.nil?
-        if current_user.refresh_google_token!
+        if current_user.refresh_google_token
           service = current_user.google_calendar_service
         end
       end
@@ -20,7 +20,7 @@ module Api::V1
         max_results: 10,
         single_events: true,
         order_by: 'startTime',
-        time_min: DateTime.now.rfc3339
+        time_min: 1.year.ago.rfc3339
       )
 
       render json: { events: events.items || [] }

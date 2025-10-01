@@ -166,11 +166,19 @@ const calendar = {
         return eventDate >= now;
       });
     },
+    ongoingEvents: (state) => {
+      const now = new Date();
+      return state.events.filter(event => {
+        const start = new Date(event.start_time || event.start?.date_time);
+        const end = new Date(event.end_time || event.end?.date_time);
+        return start <= now && end >= now;
+      });
+    },
     pastEvents: (state) => {
       const now = new Date();
       return state.events.filter(event => {
-        const eventDate = new Date(event.start_time || event.start?.date_time);
-        return eventDate < now;
+        const end = new Date(event.end_time || event.end?.date_time);
+        return end < now;
       });
     },
     loading: (state) => state.loading,
