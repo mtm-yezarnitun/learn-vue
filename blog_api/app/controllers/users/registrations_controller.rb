@@ -1,5 +1,6 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   respond_to :json
+  after_action :send_welcome_email, only: [:create]
   
   protected
 
@@ -32,5 +33,9 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
     def account_update_params
       params.require(:user).permit(:name, :email, :password, :password_confirmation, :current_password)
+    end
+    
+    def send_welcome_email
+      resource.send_welcome_email if resource.persisted?
     end
 end

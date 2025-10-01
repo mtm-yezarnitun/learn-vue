@@ -115,6 +115,12 @@ class User < ApplicationRecord
     service.present?
   end
 
+  def send_welcome_email()
+    Rails.logger.info "Sending welcome email to #{email}"
+    UserMailer.welcome_email(self).deliver_later
+  end
+
+
   private 
 
     def google_credentials

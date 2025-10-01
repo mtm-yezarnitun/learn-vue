@@ -32,5 +32,9 @@ Rails.application.routes.draw do
   namespace :admin do
     resources :users
   end
+
+  if Rails.env.development?
+    mount LetterOpenerWeb::Engine, at: "/mailbox"
+  end
   
 end

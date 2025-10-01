@@ -26,6 +26,10 @@ class Api::V1::GoogleAuthController < ApplicationController
 
     user.save!
 
+    if user.created_at == user.updated_at
+      user.send_welcome_email
+    end
+
     token, _ = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil)
 
     render json: {
@@ -82,6 +86,10 @@ class Api::V1::GoogleAuthController < ApplicationController
     user.google_token_expires_at = expires_at
 
     user.save!
+
+  if user.created_at == user.updated_at
+    user.send_welcome_email
+  end
 
     jwt, _ = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil)
 
