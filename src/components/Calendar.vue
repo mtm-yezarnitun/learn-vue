@@ -50,6 +50,24 @@
               placeholder="Office, Zoom, Restaurant..."
             >
           </div>
+
+          <div class="form-group">
+            <label>Event Color:</label>
+            <div class="color-picker">
+              <div 
+                v-for="color in eventColors" 
+                :key="color.id"
+                class="color-option"
+                :class="{ active: newEvent.colorId === color.id }"
+                :style="{ backgroundColor: color.hex }"
+                @click="newEvent.colorId = color.id"
+                :title="color.name"
+              >
+                <span v-if="newEvent.colorId === color.id">✓</span>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Start Time:</label>
             <input 
@@ -89,7 +107,7 @@
     </div>
 
     <!-- ongoingEvents -->
-    <div class="events-section">
+    <div class="events-section" >
       <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
       
       <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
@@ -108,6 +126,10 @@
           :key="oEvent.id" 
           class="event-card"
           :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+          :style="{
+            borderLeft: `5px solid ${getEventColor(oEvent)}`,
+            borderRight: `5px solid ${getEventColor(oEvent)}`
+          }"
         >
           <div class="event-header">
             <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
@@ -174,6 +196,10 @@
           :key="event.id" 
           class="event-card"
           :class="{ 'deleting': deletingEvents.includes(event.id) }"
+          :style="{
+            borderLeft: `5px solid ${getEventColor(event)}`,
+            borderRight: `5px solid ${getEventColor(event)}`
+          }"
         >
           <div class="event-header">
             <h4 class="event-title">{{ event.summary || event.title }}</h4>
@@ -240,6 +266,10 @@
           :key="pEvent.id" 
           class="event-card"
           :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+          :style="{
+            borderLeft: `5px solid ${getEventColor(pEvent)}`,
+            borderRight: `5px solid ${getEventColor(pEvent)}`
+          }"
         >
           <div class="event-header">
             <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
@@ -321,6 +351,24 @@
               placeholder="Office, Zoom, Restaurant..."
             >
           </div>
+
+          <div class="form-group">
+            <label>Event Color:</label>
+            <div class="color-picker">
+              <div 
+                v-for="color in eventColors" 
+                :key="color.id"
+                class="color-option"
+                :class="{ active: updateEventData.colorId === color.id }"
+                :style="{ backgroundColor: color.hex }"
+                @click="updateEventData.colorId = color.id"
+                :title="color.name"
+              >
+                <span v-if="updateEventData.colorId === color.id">✓</span>
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Start Time:</label>
             <input 
@@ -398,14 +446,27 @@ const showUpdateForm = ref(false);
 const showDeleteConfirm = ref(false);
 const eventToDelete = ref(null);
 const deletingEvents = ref([]); 
-
+const eventColors = ref([
+  { id: '1', name: 'Lavender', hex: '#7986cb' },
+  { id: '2', name: 'Sage', hex: '#33b679' },
+  { id: '3', name: 'Grape', hex: '#8e24aa' },
+  { id: '4', name: 'Flamingo', hex: '#e67c73' },
+  { id: '5', name: 'Banana', hex: '#f6c026' },
+  { id: '6', name: 'Tangerine', hex: '#f5511d' },
+  { id: '7', name: 'Peacock', hex: '#039be5' },
+  { id: '8', name: 'Graphite', hex: '#616161' },
+  { id: '9', name: 'Blueberry', hex: '#3f51b5' },
+  { id: '10', name: 'Basil', hex: '#0b8043' },
+  { id: '11', name: 'Tomato', hex: '#d60000' }
+]);
 
 const newEvent = ref({
   title: '',
   description: '',
   start_time: '',
   end_time: '',
-  location: ''
+  location: '',
+  colorId: '1'
 });
 
 const updateEventData = ref({
@@ -414,7 +475,8 @@ const updateEventData = ref({
   description: '',
   start_time: '',
   end_time: '',
-  location: ''
+  location: '',
+  colorId: ''
 });
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
@@ -468,6 +530,7 @@ async function updateEvent() {
         title: updateEventData.value.title,
         description: updateEventData.value.description,
         location: updateEventData.value.location,
+        colorId: updateEventData.value.colorId,
         start_time: updateEventData.value.start_time,
         end_time: updateEventData.value.end_time
       }
@@ -493,6 +556,7 @@ function openUpdateForm(event) {
     title: event.summary || event.title || '',
     description: event.description || '',
     location: event.location || '',
+    colorId: event.colorId || event.color_id || '1',
     start_time: formatDateTimeForInput(event.start?.date_time || event.start_time),
     end_time: formatDateTimeForInput(event.end?.date_time || event.end_time)
   };
@@ -557,6 +621,17 @@ function formatDateTime(dateTimeString) {
 function formatDateTimeForInput(dateTimeString) {
   if (!dateTimeString) return 'N/A';
   return dateTimeString.replace(/\..*$/, '').slice(0, 16);
+}
+
+function getEventColor(event) {
+  const colorId = event.colorId || event.color_id || '1';
+  const color = eventColors.value.find(c => c.id === colorId);
+  return color ? color.hex : '#7986cb'; 
+}
+
+function getEventBackgroundColor(event) {
+  const color = getEventColor(event);
+  return `${color}15`; 
 }
 </script>
 
@@ -887,62 +962,36 @@ function formatDateTimeForInput(dateTimeString) {
 .btn-secondary:hover:not(:disabled) {
   background: #555;
 }
-.event-location {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 10px;
-  align-items: center;
-  text-align: center;
+
+.color-picker {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
+  margin: 0 auto;
 }
 
-.btn-map {
-  background: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
+.color-option {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-map:hover {
-  background: #3367d6;
-}
-
-.map-modal {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.map-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
 }
 
-.map-header h3 {
-  margin: 0;
-  color: #333;
-  font-size: 18px;
+.color-option:hover {
+  transform: scale(1.1);
 }
 
-.map-container {
-  margin: 0;
+.color-option.active {
+  border: 2px solid #333;
+  transform: scale(1.1);
 }
 
-.map-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  padding: 20px;
-  border-top: 1px solid #e0e0e0;
-}
 </style>

@@ -53,6 +53,7 @@ module Api::V1
           summary: params[:title],
           description: params[:description],
           location: params[:location], 
+          color_id: params[:colorId],
           start: Google::Apis::CalendarV3::EventDateTime.new(
             date_time: start_time.rfc3339,
             time_zone: user_timezone
@@ -99,12 +100,13 @@ module Api::V1
         if start_time && end_time && end_time <= start_time
           return render json: { error: 'End time must be after start time' }, status: :bad_request
         end
-        
+          
         existing_event = service.get_event('primary', params[:id])
         
         existing_event.summary = params[:title] if params[:title].present?
         existing_event.description = params[:description] if params.key?(:description)
         existing_event.location = params[:location] if params.key?(:location)
+        existing_event.color_id = params[:colorId] if params.key?(:colorId)
         
         if start_time
           existing_event.start = Google::Apis::CalendarV3::EventDateTime.new(
@@ -165,6 +167,7 @@ module Api::V1
         title: event.summary,
         description: event.description,
         location: event.location,
+        colorId: event.color_id,
         start_time: event.start&.date_time,
         end_time: event.end&.date_time,
         html_link: event.html_link
