@@ -96,7 +96,7 @@ a:hover {
   color: grey;
 }
 
-.nav-bar {
+.navbar {
   padding-top: 20px;
 }
 

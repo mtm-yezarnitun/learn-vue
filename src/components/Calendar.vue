@@ -159,6 +159,10 @@
           </a>
           <div class="event-actions">
             <button 
+              @click="openUpdateForm(oEvent)" 
+              class="btn-edit"> Edit
+            </button>
+            <button 
               @click="deleteEvent(oEvent.id)" 
               class="btn-delete"
               :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
@@ -166,10 +170,6 @@
               >
               <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
               <span v-else>🗑️</span>
-            </button>
-            <button 
-              @click="openUpdateForm(oEvent)" 
-              class="btn-edit"> Edit
             </button>
           </div>
         </div>
@@ -229,6 +229,10 @@
           </a>
           <div class="event-actions">
               <button 
+                @click="openUpdateForm(event)" 
+                class="btn-edit"> Edit
+              </button>
+              <button 
                 @click="deleteEvent(event.id)" 
                 class="btn-delete"
                 :disabled="deletingEvent || deletingEvents.includes(event.id)"
@@ -236,10 +240,6 @@
               >
                 <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
                 <span v-else>🗑️</span>
-              </button>
-              <button 
-                @click="openUpdateForm(event)" 
-                class="btn-edit"> Edit
               </button>
           </div>
         </div>
@@ -299,17 +299,17 @@
           </a>
           <div class="event-actions">
             <button 
+              @click="openUpdateForm(pEvent)" 
+              class="btn-edit"> Edit
+            </button>
+            <button 
               @click="deleteEvent(pEvent.id)" 
               class="btn-delete"
               :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
               :title="'Delete ' + (pEvent.title || 'event')"
             >
-              <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
-              <span v-else>🗑️</span>
-            </button>
-            <button 
-              @click="openUpdateForm(pEvent)" 
-              class="btn-edit"> Edit
+            <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+            <span v-else>🗑️</span>
             </button>
           </div>
         </div>
@@ -712,6 +712,7 @@ function getEventBackgroundColor(event) {
 }
 
 .events-section {
+  min-width: 700px;
   margin-top: 20px;
 }
 
@@ -827,6 +828,11 @@ function getEventBackgroundColor(event) {
   border-radius: 8px;
 }
 
+.event-location {
+  color: #666 !important;
+  margin-bottom: 10px;
+} 
+
 .loading-state {
   text-align: center;
   padding: 40px;
@@ -835,7 +841,7 @@ function getEventBackgroundColor(event) {
 
 .spinner {
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #4285f4;
+  border-top: 3px solid #43e192;
   border-radius: 50%;
   width: 40px;
   height: 40px;
