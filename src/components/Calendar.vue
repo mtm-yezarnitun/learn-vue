@@ -80,6 +80,7 @@
       <button @click="clearError" class="btn-close">×</button>
     </div>
 
+    <!-- ongoingEvents -->
     <div class="events-section">
       <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
       
@@ -102,17 +103,6 @@
         >
           <div class="event-header">
             <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
-            <div class="event-actions">
-              <button 
-                @click="deleteEvent(oEvent.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
-                :title="'Delete ' + (oEvent.title || 'event')"
-              >
-                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
-              </button>
-            </div>
           </div>
           
           <p v-if="oEvent.description" class="event-description">
@@ -134,11 +124,26 @@
           >
             View in Google Calendar
           </a>
+          <div class="event-actions">
+            <button 
+              @click="deleteEvent(oEvent.id)" 
+              class="btn-delete"
+              :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+              :title="'Delete ' + (oEvent.title || 'event')"
+              >
+              <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
+              <span v-else>🗑️</span>
+            </button>
+            <button 
+              @click="openUpdateForm(oEvent)" 
+              class="btn-edit"> Edit
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    
+    <!-- upcomingEvents -->
     <div class="events-section">
       <h3>Upcoming Events ({{ events.length }})</h3>
       
@@ -161,17 +166,6 @@
         >
           <div class="event-header">
             <h4 class="event-title">{{ event.summary || event.title }}</h4>
-            <div class="event-actions">
-              <button 
-                @click="deleteEvent(event.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(event.id)"
-                :title="'Delete ' + (event.title || 'event')"
-              >
-                <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
-              </button>
-            </div>
           </div>
           
           <p v-if="event.description" class="event-description">
@@ -193,11 +187,26 @@
           >
             View in Google Calendar
           </a>
+          <div class="event-actions">
+              <button 
+                @click="deleteEvent(event.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(event.id)"
+                :title="'Delete ' + (event.title || 'event')"
+              >
+                <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+              </button>
+              <button 
+                @click="openUpdateForm(event)" 
+                class="btn-edit"> Edit
+              </button>
+          </div>
         </div>
       </div>
     </div>
 
-
+    <!-- pastEvents -->
     <div class="events-section">
       <h3>Past Events ({{ pastEvents.length }})</h3>
       
@@ -220,17 +229,6 @@
         >
           <div class="event-header">
             <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
-            <div class="event-actions">
-              <button 
-                @click="deleteEvent(pEvent.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
-                :title="'Delete ' + (pEvent.title || 'event')"
-              >
-                <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
-              </button>
-            </div>
           </div>
           
           <p v-if="pEvent.description" class="event-description">
@@ -252,10 +250,85 @@
           >
             View in Google Calendar
           </a>
+          <div class="event-actions">
+            <button 
+              @click="deleteEvent(pEvent.id)" 
+              class="btn-delete"
+              :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+              :title="'Delete ' + (pEvent.title || 'event')"
+            >
+              <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+              <span v-else>🗑️</span>
+            </button>
+            <button 
+              @click="openUpdateForm(pEvent)" 
+              class="btn-edit"> Edit
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
+
+    <div v-if="showUpdateForm" class="event-form-overlay">
+  <div class="event-form">
+    <h3>Update Event</h3>
+    <form @submit.prevent="updateEvent">
+      <div class="form-group">
+        <label>Title:</label>
+        <input 
+          v-model="updateEventData.title" 
+          type="text" 
+          required 
+          class="form-input"
+          placeholder="Meeting with team"
+        >
+      </div>
+      <div class="form-group">
+        <label>Description:</label>
+        <textarea 
+          v-model="updateEventData.description" 
+          class="form-textarea"
+          placeholder="Add details about your event..."
+        ></textarea>
+      </div>
+      <div class="form-group">
+        <label>Start Time:</label>
+        <input 
+          v-model="updateEventData.start_time" 
+          type="datetime-local" 
+          required 
+          class="form-input"
+        >
+      </div>
+      <div class="form-group">
+        <label>End Time:</label>
+        <input 
+          v-model="updateEventData.end_time" 
+          type="datetime-local" 
+          required 
+          class="form-input"
+        >
+      </div>
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          :disabled="updatingEvent"
+        >
+          {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+        </button>
+        <button 
+          type="button" 
+          @click="cancelUpdate" 
+          class="btn btn-secondary"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+    </div>
 
     <div v-if="showDeleteConfirm" class="modal-overlay">
       <div class="modal">
@@ -291,6 +364,7 @@ const store = useStore();
 const router = useRouter();
 
 const showEventForm = ref(false);
+const showUpdateForm = ref(false);
 const showDeleteConfirm = ref(false);
 const eventToDelete = ref(null);
 const deletingEvents = ref([]); 
@@ -302,11 +376,20 @@ const newEvent = ref({
   end_time: ''
 });
 
+const updateEventData = ref({
+  id: null,
+  title: '',
+  description: '',
+  start_time: '',
+  end_time: ''
+});
+
 const events = computed(() => store.getters['calendar/upcomingEvents']);
 const pastEvents = computed(() => store.getters['calendar/pastEvents']);
 const ongoingEvents = computed(() => store.getters['calendar/ongoingEvents']);
 const loading = computed(() => store.getters['calendar/loading']);
 const creatingEvent = computed(() => store.getters['calendar/creatingEvent']);
+const updatingEvent = computed(() => store.getters['calendar/editingEvent']);
 const deletingEvent = computed(() => store.getters['calendar/deletingEvent']);
 const error = computed(() => store.getters['calendar/error']);
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
@@ -327,18 +410,38 @@ async function fetchEvents() {
   }
   await store.dispatch('calendar/fetchEvents');
 }
-
+  
 async function createEvent() {
-  if (!isAuthenticated.value) {
-    router.push('/login');
-    return;
-  }
+    if (!isAuthenticated.value) {
+      router.push('/login');
+      return;
+    }
+    try {
+      await store.dispatch('calendar/createEvent', newEvent.value);
+      window.$toast.success('Event created successfully!');
+      cancelCreate();
+    } catch (error) {
+      console.error('Failed to create event:', error);
+    }
+}
+
+async function updateEvent() {
+  if (!isAuthenticated.value) return;
+  
   try {
-    await store.dispatch('calendar/createEvent', newEvent.value);
-    window.$toast.success('Event created successfully!');
-    cancelCreate();
+    await store.dispatch('calendar/updateEvent', {
+      eventId: updateEventData.value.id,
+      eventData: {
+        title: updateEventData.value.title,
+        description: updateEventData.value.description,
+        start_time: updateEventData.value.start_time,
+        end_time: updateEventData.value.end_time
+      }
+    });
+    window.$toast.success('Event updated successfully!');
+    cancelUpdate();
   } catch (error) {
-    console.error('Failed to create event:', error);
+    console.error('Failed to update event:', error);
   }
 }
 
@@ -348,6 +451,17 @@ function deleteEvent(eventId) {
              || ongoingEvents.value.find( e => e.id === eventId);
   eventToDelete.value = event;
   showDeleteConfirm.value = true;
+}
+
+function openUpdateForm(event) {
+  updateEventData.value = {
+    id: event.id,
+    title: event.summary || event.title || '',
+    description: event.description || '',
+    start_time: formatDateTimeForInput(event.start?.date_time || event.start_time),
+    end_time: formatDateTimeForInput(event.end?.date_time || event.end_time)
+  };
+  showUpdateForm.value = true;
 }
 
 async function confirmDelete() {
@@ -368,6 +482,17 @@ async function confirmDelete() {
     }
     cancelDelete();
   }
+}
+
+function cancelUpdate() {
+  showUpdateForm.value = false;
+  updateEventData.value = {
+    id: null,
+    title: '',
+    description: '',
+    start_time: '',
+    end_time: ''
+  };
 }
 
 function cancelDelete() {
@@ -392,6 +517,11 @@ function clearError() {
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return 'N/A';
   return new Date(dateTimeString).toLocaleString();
+}
+
+function formatDateTimeForInput(dateTimeString) {
+  if (!dateTimeString) return 'N/A';
+  return dateTimeString.replace(/\..*$/, '').slice(0, 16);
 }
 </script>
 
@@ -665,6 +795,11 @@ function formatDateTime(dateTimeString) {
   display: flex;
   gap: 10px;
   justify-content: center;
+}
+
+.btn-edit {
+  background: none !important;
+  color: #333;
 }
 
 .btn-danger {

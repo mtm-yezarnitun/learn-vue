@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="navbar">
     <nav v-if="$route.path !== '/dashboard' && $route.path !== '/login' && $route.path !== '/register'">
       <ul>
         <li>
@@ -9,7 +9,7 @@
           <router-link to="/blog">Blog</router-link>
         </li>
         <li>
-          <router-link to="/todos">Todo List</router-link>
+          <router-link to="/todos">Todo</router-link>
         </li>
         <li>
           <router-link to="/weather">Weather</router-link>
@@ -89,6 +89,7 @@ a {
   text-decoration: none;
   color: #555 !important;
   padding: 20px;
+  word-wrap: break-word;
 
 }
 a:hover {
@@ -112,7 +113,7 @@ ul {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 30px;
+  width: 70%;
 }
 ul li {
   font-size: 14px;
@@ -128,6 +129,10 @@ router-link {
 .router-link-active {
   font-weight: bold;
   color: #43e192 !important;
+}
+
+.user-info {
+  width: 20%;
 }
 
 </style>

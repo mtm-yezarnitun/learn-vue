@@ -20,6 +20,7 @@ Rails.application.routes.draw do
 
       get '/calendar/events', to: 'calendar#events'
       post '/calendar/events', to: 'calendar#create_event'
+      patch '/calendar/events/:id', to: 'calendar#update'
       delete '/calendar/events/:id', to: 'calendar#destroy'
       
       resources :posts do

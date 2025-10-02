@@ -4,7 +4,6 @@ module Api::V1
 
     def events
       service = current_user.google_calendar_service
-
       if service.nil?
         if current_user.refresh_google_token
           service = current_user.google_calendar_service
@@ -17,7 +16,6 @@ module Api::V1
 
       events = service.list_events(
         'primary',
-        max_results: 10,
         single_events: true,
         order_by: 'startTime',
         time_min: 1.year.ago.rfc3339
@@ -76,6 +74,68 @@ module Api::V1
       end
     end
 
+    def update
+      unless current_user.google_access_token
+        return render json: { error: 'Google Calendar not connected' }, status: :unauthorized
+      end
+
+      service = current_user.google_calendar_service
+      if service.nil?
+        return render json: { error: 'Failed to initialize calendar service' }, status: :internal_server_error
+      end
+
+      begin
+        user_timezone = 'Asia/Yangon'
+        
+        start_time = if params[:start_time].present?
+          Time.find_zone(user_timezone).parse(params[:start_time])
+        end
+
+        end_time = if params[:end_time].present?
+          Time.find_zone(user_timezone).parse(params[:end_time])
+        end
+
+        if start_time && end_time && end_time <= start_time
+          return render json: { error: 'End time must be after start time' }, status: :bad_request
+        end
+
+        existing_event = service.get_event('primary', params[:id])
+
+        existing_event.summary = params[:title] if params[:title].present?
+        existing_event.description = params[:description] if params.key?(:description)
+
+        if start_time
+          existing_event.start = Google::Apis::CalendarV3::EventDateTime.new(
+            date_time: start_time.rfc3339,
+            time_zone: user_timezone
+          )
+        end
+
+        if end_time
+          existing_event.end = Google::Apis::CalendarV3::EventDateTime.new(
+            date_time: end_time.rfc3339,
+            time_zone: user_timezone
+          )
+        end
+
+        result = service.update_event('primary', params[:id], existing_event)
+        
+        render json: { event: calendar_event_to_json(result) }
+
+      rescue ArgumentError => e
+        render json: { error: 'Invalid date format' }, status: :bad_request
+      rescue Google::Apis::ClientError => e
+        if e.status_code == 404
+          render json: { error: 'Event not found' }, status: :not_found
+        else
+          render json: { error: 'Google Calendar error: ' + e.message }, status: :bad_request
+        end
+      rescue => e
+        Rails.logger.error "Calendar update error: #{e.message}"
+        render json: { error: 'Failed to update event' }, status: :internal_server_error
+      end
+    end
+
     def destroy
       unless current_user.google_access_token
         return render json: { error: 'Google Calendar not connected' }, status: :unauthorized
@@ -97,7 +157,6 @@ module Api::V1
     end
 
     private
-
     def calendar_event_to_json(event)
       {
         id: event.id,

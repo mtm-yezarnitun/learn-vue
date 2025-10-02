@@ -10,6 +10,7 @@ const calendar = {
       loading: false,
       creatingEvent: false,
       deletingEvent: false,
+      editingEvent: false,
       error: null
     };
   },
@@ -35,6 +36,9 @@ const calendar = {
     setCreatingEvent(state, creating) {
       state.creatingEvent = creating;
     },
+    setEditingEvent(state, editing) {
+      state.editingEvent = editing;
+    },
     setDeletingEvent(state, deleting) {
       state.deletingEvent = deleting;
     },
@@ -56,7 +60,7 @@ const calendar = {
       commit('clearError');
 
       try {
-        const token = rootGetters['auth/token'] || localStorage.getItem('access_token');
+        const token = rootGetters['auth/token'] || localStorage.getItem('token');
 
         if (!token) {
           throw new Error('No authentication token found');
@@ -98,7 +102,7 @@ const calendar = {
       commit('clearError');
 
       try {
-        const token = rootGetters['auth/token'] || localStorage.getItem('access_token');
+        const token = rootGetters['auth/token'] || localStorage.getItem('token');
         
         if (!token) {
           throw new Error('No authentication token found');
@@ -121,6 +125,41 @@ const calendar = {
       }
     },
 
+    async updateEvent({commit , rootGetters},{ eventId ,eventData } ){
+      if (!rootGetters['auth/isAuthenticated']) {
+        commit('setError', 'Please login to edit events');
+        return;
+      }
+
+      commit('setEditingEvent', true);
+      commit('clearError');
+
+      try {
+        const token = rootGetters['auth/token'] || localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+        const response = await axios.patch(`${API_URL}/api/v1/calendar/events/${eventId}`, eventData, {
+          headers: {
+            'Authorization': `Bearer ${token}` , 
+            'Content-Type': 'application/json'
+          }
+
+        });
+
+        commit('updateEvent', response.data.event);
+        return response.data.event;
+
+      } catch (error) {
+          const errorMsg = error.response?.data?.error || "Failed to update event";
+          commit('setError', errorMsg);
+          console.error('Calendar update error:', error);
+          throw error;
+        } finally {
+          commit('setEditingEvent', false);
+        }
+    },
+      
     async deleteEvent({ commit, rootGetters }, eventId) {
       if (!rootGetters['auth/isAuthenticated']) {
         commit('setError', 'Please login to delete events');
@@ -131,7 +170,7 @@ const calendar = {
       commit('clearError');
 
       try {
-        const token = rootGetters['auth/token'] || localStorage.getItem('access_token');
+        const token = rootGetters['auth/token'] || localStorage.getItem('token');
         if (!token) {
           throw new Error('No authentication token found');
         }
