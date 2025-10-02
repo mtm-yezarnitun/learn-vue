@@ -43,7 +43,13 @@ const router = createRouter({
 router.beforeEach((to, from,next) => {
   const publicPages = ['/login', '/register', '/auth/success']
   const authRequired = !publicPages.includes(to.path)
-  const loggedIn = store.getters['auth/isAuthenticated']
+
+  const loggedIn = store.getters['auth/isAuthenticated'] || localStorage.getItem('token')
+  const userExists = store.getters['auth/user'] || localStorage.getItem('user')
+
+  if ((to.path === '/' || to.path === '/login' || to.path === '/register') && loggedIn && userExists) {
+    return next('/dashboard')
+  }
 
   if (authRequired && !loggedIn) {
     return next('/login')

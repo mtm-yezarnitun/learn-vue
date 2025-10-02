@@ -69,7 +69,7 @@ class User < ApplicationRecord
         
         update(
           google_access_token: token_data["access_token"],
-          google_token_expires_at: Time.now + token_data["expires_in"].to_i
+          google_token_expires_at: Time.now.utc + token_data["expires_in"].to_i
         )
         
         return true
@@ -92,22 +92,6 @@ class User < ApplicationRecord
     google_access_token.present? && google_refresh_token.present?
   end
 
-  def store_google_tokens(token_data)
-    update(
-      google_access_token: token_data["access_token"],
-      google_refresh_token: token_data["refresh_token"],
-      google_token_expires_at: Time.now + token_data["expires_in"].to_i
-    )
-  end
-
-  def clear_google_tokens!
-    update(
-      google_access_token: nil,
-      google_refresh_token: nil,
-      google_token_expires_at: nil
-    )
-  end
-
   def can_access_calendar?
     return false unless google_calendar_connected?
     
@@ -119,11 +103,5 @@ class User < ApplicationRecord
     Rails.logger.info "Sending welcome email to #{email}"
     UserMailer.welcome_email(self).deliver_later
   end
-
-
-  private 
-
-    def google_credentials
-      google_access_token
-    end
+  
 end
