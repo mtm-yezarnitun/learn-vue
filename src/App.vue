@@ -90,10 +90,14 @@ a {
   color: #555 !important;
   padding: 20px;
   word-wrap: break-word;
-
 }
+
 a:hover {
   color: grey;
+}
+
+.nav-bar {
+  padding-top: 20px;
 }
 
 nav {

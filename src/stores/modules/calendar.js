@@ -75,7 +75,7 @@ const calendar = {
         commit('setEvents', response.data.events || []);
       } catch (error) {
         if (error.response?.status === 401) {
-          const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Google Calendar not connected';
+          const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Google Calendar not connected . Logout and Login again to regain Access!';
           commit('setError', errorMsg);
           
           if (error.response?.data?.reconnect_required) {
@@ -83,6 +83,7 @@ const calendar = {
           }
         } else {
           const errorMsg = error.response?.data?.error || "Failed to fetch calendar events";
+          window.$toast.error('Fail to fetch calendar events!');
           commit('setError', errorMsg);
         }
         console.error('Calendar fetch error:', error);
@@ -119,6 +120,7 @@ const calendar = {
         const errorMsg = error.response?.data?.error || "Failed to create event";
         commit('setError', errorMsg);
         console.error('Calendar create error:', error);
+        window.$toast.error('Couldn`t Create Event!');
         throw error;
       } finally {
         commit('setCreatingEvent', false);
@@ -154,6 +156,7 @@ const calendar = {
           const errorMsg = error.response?.data?.error || "Failed to update event";
           commit('setError', errorMsg);
           console.error('Calendar update error:', error);
+          window.$toast.error('Couldn`t Update Event!');
           throw error;
         } finally {
           commit('setEditingEvent', false);

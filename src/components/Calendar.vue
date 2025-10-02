@@ -18,6 +18,10 @@
     <div v-if="showEventForm" class="event-form-overlay">
       <div class="event-form">
         <h3>Create New Event</h3>
+        <div v-if="error" class="error-message">
+          {{ error }}
+          <button @click="clearError" class="btn-close">×</button>
+        </div>
         <form @submit.prevent="createEvent">
           <div class="form-group">
             <label>Title:</label>
@@ -36,6 +40,15 @@
               class="form-textarea"
               placeholder="Add details about your event..."
             ></textarea>
+          </div>
+          <div class="form-group">
+            <label>Location:</label>
+            <input 
+              v-model="newEvent.location" 
+              type="text" 
+              class="form-input"
+              placeholder="Office, Zoom, Restaurant..."
+            >
           </div>
           <div class="form-group">
             <label>Start Time:</label>
@@ -75,11 +88,6 @@
       </div>
     </div>
 
-    <div v-if="error" class="error-message">
-      {{ error }}
-      <button @click="clearError" class="btn-close">×</button>
-    </div>
-
     <!-- ongoingEvents -->
     <div class="events-section">
       <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
@@ -108,6 +116,9 @@
           <p v-if="oEvent.description" class="event-description">
             {{ oEvent.description }}
           </p>
+          <div class="event-location" v-if="oEvent.location">
+            <strong>Location:</strong> {{ oEvent.location }}
+          </div>
           <div class="event-times">
             <div class="event-time">
               <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
@@ -171,6 +182,9 @@
           <p v-if="event.description" class="event-description">
             {{ event.description }}
           </p>
+          <div class="event-location" v-if="event.location">
+            <strong>Location:</strong> {{ event.location }}
+          </div>
           <div class="event-times">
             <div class="event-time">
               <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
@@ -234,6 +248,9 @@
           <p v-if="pEvent.description" class="event-description">
             {{ pEvent.description }}
           </p>
+          <div class="event-location" v-if="pEvent.location">
+            <strong>Location:</strong> {{ pEvent.location }}
+          </div>
           <div class="event-times">
             <div class="event-time">
               <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
@@ -269,65 +286,77 @@
       </div>
     </div>
 
-
     <div v-if="showUpdateForm" class="event-form-overlay">
-  <div class="event-form">
-    <h3>Update Event</h3>
-    <form @submit.prevent="updateEvent">
-      <div class="form-group">
-        <label>Title:</label>
-        <input 
-          v-model="updateEventData.title" 
-          type="text" 
-          required 
-          class="form-input"
-          placeholder="Meeting with team"
-        >
+      <div class="event-form">
+        <h3>Update Event</h3>
+        <div v-if="error" class="error-message">
+          {{ error }}
+          <button @click="clearError" class="btn-close">×</button>
+        </div>
+        <form @submit.prevent="updateEvent">
+          <div class="form-group">
+            <label>Title:</label>
+            <input 
+              v-model="updateEventData.title" 
+              type="text" 
+              required 
+              class="form-input"
+              placeholder="Meeting with team"
+            >
+          </div>
+          <div class="form-group">
+            <label>Description:</label>
+            <textarea 
+              v-model="updateEventData.description" 
+              class="form-textarea"
+              placeholder="Add details about your event..."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label>Location:</label>
+            <input 
+              v-model="updateEventData.location" 
+              type="text" 
+              class="form-input"
+              placeholder="Office, Zoom, Restaurant..."
+            >
+          </div>
+          <div class="form-group">
+            <label>Start Time:</label>
+            <input 
+              v-model="updateEventData.start_time" 
+              type="datetime-local" 
+              required 
+              class="form-input"
+            >
+          </div>
+          <div class="form-group">
+            <label>End Time:</label>
+            <input 
+              v-model="updateEventData.end_time" 
+              type="datetime-local" 
+              required 
+              class="form-input"
+            >
+          </div>
+          <div class="form-actions">
+            <button 
+              type="submit" 
+              class="btn btn-primary" 
+              :disabled="updatingEvent"
+            >
+              {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+            </button>
+            <button 
+              type="button" 
+              @click="cancelUpdate" 
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="form-group">
-        <label>Description:</label>
-        <textarea 
-          v-model="updateEventData.description" 
-          class="form-textarea"
-          placeholder="Add details about your event..."
-        ></textarea>
-      </div>
-      <div class="form-group">
-        <label>Start Time:</label>
-        <input 
-          v-model="updateEventData.start_time" 
-          type="datetime-local" 
-          required 
-          class="form-input"
-        >
-      </div>
-      <div class="form-group">
-        <label>End Time:</label>
-        <input 
-          v-model="updateEventData.end_time" 
-          type="datetime-local" 
-          required 
-          class="form-input"
-        >
-      </div>
-      <div class="form-actions">
-        <button 
-          type="submit" 
-          class="btn btn-primary" 
-          :disabled="updatingEvent"
-        >
-          {{ updatingEvent ? 'Updating...' : 'Update Event' }}
-        </button>
-        <button 
-          type="button" 
-          @click="cancelUpdate" 
-          class="btn btn-secondary"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
     </div>
 
     <div v-if="showDeleteConfirm" class="modal-overlay">
@@ -352,6 +381,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -369,11 +399,13 @@ const showDeleteConfirm = ref(false);
 const eventToDelete = ref(null);
 const deletingEvents = ref([]); 
 
+
 const newEvent = ref({
   title: '',
   description: '',
   start_time: '',
-  end_time: ''
+  end_time: '',
+  location: ''
 });
 
 const updateEventData = ref({
@@ -381,7 +413,8 @@ const updateEventData = ref({
   title: '',
   description: '',
   start_time: '',
-  end_time: ''
+  end_time: '',
+  location: ''
 });
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
@@ -434,6 +467,7 @@ async function updateEvent() {
       eventData: {
         title: updateEventData.value.title,
         description: updateEventData.value.description,
+        location: updateEventData.value.location,
         start_time: updateEventData.value.start_time,
         end_time: updateEventData.value.end_time
       }
@@ -458,6 +492,7 @@ function openUpdateForm(event) {
     id: event.id,
     title: event.summary || event.title || '',
     description: event.description || '',
+    location: event.location || '',
     start_time: formatDateTimeForInput(event.start?.date_time || event.start_time),
     end_time: formatDateTimeForInput(event.end?.date_time || event.end_time)
   };
@@ -851,5 +886,63 @@ function formatDateTimeForInput(dateTimeString) {
 
 .btn-secondary:hover:not(:disabled) {
   background: #555;
+}
+.event-location {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.btn-map {
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-map:hover {
+  background: #3367d6;
+}
+
+.map-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.map-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.map-container {
+  margin: 0;
+}
+
+.map-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
 }
 </style>
