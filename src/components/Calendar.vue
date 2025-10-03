@@ -1,5 +1,6 @@
 <template>
   <div class="calendar-container">
+
     <div class="calendar-header">
       <div class="calendar-actions">
         <button 
@@ -90,7 +91,7 @@
           <div class="form-group">
             <label>Recurrence:</label>
             <select v-model="newEvent.recurrence">
-              <option value="">None</option>
+              <option value="null">None</option>
               <option value="RRULE:FREQ=DAILY;COUNT=7">Daily</option>
               <option value="RRULE:FREQ=WEEKLY;COUNT=4">Weekly</option>
               <option value="RRULE:FREQ=MONTHLY;COUNT=3">Monthly</option>
@@ -531,7 +532,6 @@
 
     </div>
 
-
     <div v-if="showUpdateForm" class="event-form-overlay">
       <div class="event-form">
         <h3>Update Event</h3>
@@ -774,6 +774,7 @@ async function createEvent() {
       return;
     }
     try {
+      
       await store.dispatch('calendar/createEvent', newEvent.value);
       window.$toast.success('Event created successfully!');
       cancelCreate();
@@ -853,7 +854,9 @@ function cancelUpdate() {
     title: '',
     description: '',
     start_time: '',
-    end_time: ''
+    end_time: '' ,
+    location: '',
+    colorId: '1',
   };
 }
 
@@ -868,7 +871,9 @@ function cancelCreate() {
     title: '',
     description: '',
     start_time: '',
-    end_time: ''
+    end_time: '',
+    colorId: '1',
+    recurrence: ''
   };
 }
 

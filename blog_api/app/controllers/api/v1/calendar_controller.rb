@@ -41,9 +41,9 @@ module Api::V1
       end
 
       begin
-        recurrence = params[:recurrence].presence || params.dig(:calendar, :recurrence).presence
-        recurrence = [recurrence] if recurrence.is_a?(String)
-        recurrence = [] if recurrence.blank? 
+
+        recurrence_rule = params[:recurrence].presence
+        recurrence_rule = nil if recurrence_rule == "null"
 
         user_timezone = 'Asia/Yangon'
         start_time = Time.find_zone(user_timezone).parse(params[:start_time])
@@ -58,7 +58,6 @@ module Api::V1
           description: params[:description],
           location: params[:location], 
           color_id: params[:colorId],
-          recurrence: recurrence,
           start: Google::Apis::CalendarV3::EventDateTime.new(
             date_time: start_time.rfc3339,
             time_zone: user_timezone
@@ -68,11 +67,9 @@ module Api::V1
             time_zone: user_timezone
           )
         )
+        event.recurrence = [recurrence_rule] if recurrence_rule
 
         result = service.insert_event('primary', event)
-        
-        reminder_time = [start_time - 30.minutes, Time.current].max
-        ReminderJob.set(wait_until: reminder_time).perform_later(current_user.id, result.id)
 
         render json: { event: calendar_event_to_json(result) }
 
