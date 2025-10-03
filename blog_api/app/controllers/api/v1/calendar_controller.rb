@@ -41,8 +41,9 @@ module Api::V1
       end
 
       begin
-        recurrence = params[:recurrence] || []
+        recurrence = params[:recurrence].presence || params.dig(:calendar, :recurrence).presence
         recurrence = [recurrence] if recurrence.is_a?(String)
+        recurrence = [] if recurrence.blank? 
 
         user_timezone = 'Asia/Yangon'
         start_time = Time.find_zone(user_timezone).parse(params[:start_time])
@@ -69,8 +70,9 @@ module Api::V1
         )
 
         result = service.insert_event('primary', event)
-
-        sleep(2)
+        
+        reminder_time = [start_time - 30.minutes, Time.current].max
+        ReminderJob.set(wait_until: reminder_time).perform_later(current_user.id, result.id)
 
         render json: { event: calendar_event_to_json(result) }
 
@@ -79,6 +81,7 @@ module Api::V1
       rescue Google::Apis::ClientError => e
         render json: { error: 'Google Calendar error: ' + e.message }, status: :bad_request
       rescue => e
+        Rails.logger.error "Create event failed: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
         render json: { error: 'Failed to create event' }, status: :internal_server_error
       end
     end
@@ -122,7 +125,7 @@ module Api::V1
             date_time: start_time.rfc3339,
             time_zone: user_timezone
           )
-        end        
+        end       
 
         if end_time
           existing_event.end = Google::Apis::CalendarV3::EventDateTime.new(
@@ -132,7 +135,12 @@ module Api::V1
         end
 
         result = service.update_event('primary', params[:id], existing_event)
-        
+
+        if result.start&.date_time
+          new_start_time = result.start.date_time.to_time
+          ReminderJob.set(wait_until: new_start_time - 30.minutes).perform_later(current_user.id, result.id)
+        end
+
         render json: { event: calendar_event_to_json(result) }
 
       rescue ArgumentError => e
