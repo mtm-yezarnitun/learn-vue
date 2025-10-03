@@ -46,6 +46,8 @@ module BlogApi
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
 
+    config.active_job.queue_adapter = :sidekiq
+    
     config.time_zone = 'Asia/Yangon'
     config.active_record.default_timezone = :local
 

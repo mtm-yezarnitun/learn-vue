@@ -45,6 +45,9 @@ module Api::V1
         recurrence_rule = params[:recurrence].presence
         recurrence_rule = nil if recurrence_rule == "null"
 
+        attendees_emails = params[:attendees]&.split(",")&.map(&:strip)&.reject(&:blank?) || []
+        attendees = attendees_emails.map { |email| Google::Apis::CalendarV3::EventAttendee.new(email: email) }
+        
         user_timezone = 'Asia/Yangon'
         start_time = Time.find_zone(user_timezone).parse(params[:start_time])
         end_time = Time.find_zone(user_timezone).parse(params[:end_time])
@@ -65,7 +68,9 @@ module Api::V1
           end: Google::Apis::CalendarV3::EventDateTime.new(
             date_time: end_time.rfc3339,
             time_zone: user_timezone
-          )
+          ),
+          attendees:  attendees
+
         )
         event.recurrence = [recurrence_rule] if recurrence_rule
 
@@ -95,6 +100,7 @@ module Api::V1
 
       begin
 
+   
 
         user_timezone = 'Asia/Yangon'
         
@@ -116,6 +122,11 @@ module Api::V1
         existing_event.description = params[:description] if params.key?(:description)
         existing_event.location = params[:location] if params.key?(:location)
         existing_event.color_id = params[:colorId] if params.key?(:colorId)
+        
+        if params.key?(:attendees)
+          attendees_emails = params[:attendees]&.split(",")&.map(&:strip)&.reject(&:blank?) || []
+          existing_event.attendees = attendees_emails.map { |email| Google::Apis::CalendarV3::EventAttendee.new(email: email) }
+        end
         
         if start_time
           existing_event.start = Google::Apis::CalendarV3::EventDateTime.new(
@@ -181,6 +192,7 @@ module Api::V1
         title: event.summary,
         description: event.description,
         location: event.location,
+        attendees: event.attendees&.map { |a| a.is_a?(String) ? a : a.email } || [],
         colorId: event.color_id,
         recurrence: event.recurrence,
         start_time: event.start&.date_time,

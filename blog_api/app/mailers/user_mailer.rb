@@ -6,4 +6,11 @@ class UserMailer < ApplicationMailer
     @url  = 'http://localhost:5173'
     mail(to: @user.email, subject: 'Welcome to My Awesome App')
   end
+
+  def event_reminder(user , event)
+    @user = user
+    @event = event
+    mail(to: @user.email, subject: 'Remainder : #{event.title}')
+  end
+
 end

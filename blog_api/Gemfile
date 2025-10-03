@@ -16,6 +16,9 @@ gem 'google-apis-calendar_v3'
 gem 'dotenv-rails', '~> 2.1', '>= 2.1.1'
 gem 'byebug'
 gem 'slim-rails'
+gem 'sidekiq'
+
+
 gem 'letter_opener_web',group: :development
 
 gem 'tzinfo-data', platforms: %i[windows jruby]

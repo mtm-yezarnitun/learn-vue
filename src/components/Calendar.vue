@@ -70,7 +70,15 @@
               placeholder="Office, Zoom, Restaurant..."
             >
           </div>
-
+          <div class="form-group">
+            <label>Attendees (emails, comma-separated):</label>
+            <input 
+              v-model="newEvent.attendees" 
+              type="text" 
+              class="form-input"
+              placeholder="alice@example.com, bob@example.com"
+            >
+          </div>
           <div class="form-group">
             <label>Event Color:</label>
             <div class="color-picker">
@@ -87,7 +95,6 @@
               </div>
             </div>
           </div>
-          
           <div class="form-group">
             <label>Recurrence:</label>
             <select v-model="newEvent.recurrence">
@@ -97,7 +104,6 @@
               <option value="RRULE:FREQ=MONTHLY;COUNT=3">Monthly</option>
             </select>
           </div>
-
           <div class="form-group">  
             <label>Start Time:</label>
             <input 
@@ -172,6 +178,9 @@
             <div class="event-location" v-if="oEvent.location">
               <strong>Location:</strong> {{ oEvent.location }}
             </div>
+            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
+              <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
+            </div>
             <div class="event-times">
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
@@ -241,6 +250,9 @@
             </p>
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
+            </div>
+            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
+              <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
             </div>
             <div class="event-times">
               <div class="event-time">
@@ -312,6 +324,9 @@
             <div class="event-location" v-if="pEvent.location">
               <strong>Location:</strong> {{ pEvent.location }}
             </div>
+            <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-attendees">
+              <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
+            </div>
             <div class="event-times">
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
@@ -375,6 +390,9 @@
             <div class="event-location" v-if="oEvent.location">
               <strong>Location:</strong> {{ oEvent.location }}
             </div>
+            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-attendees">
+              <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
+            </div>
             <div class="event-times">
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
@@ -433,6 +451,9 @@
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
             </div>
+            <div v-if="event.attendees && event.attendees.length > 0" class="event-attendees">
+              <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
+            </div>
             <div class="event-times">
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
@@ -490,6 +511,9 @@
               </p>
               <div class="event-location" v-if="pEvent.location">
                 <strong>Location:</strong> {{ pEvent.location }}
+              </div>
+              <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-attendees">
+                <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
               </div>
               <div class="event-times">
                 <div class="event-time">
@@ -567,7 +591,15 @@
               placeholder="Office, Zoom, Restaurant..."
             >
           </div>
-
+          <div class="form-group">
+            <label>Attendees (emails, comma-separated):</label>
+            <input 
+              v-model="updateEventData.attendees" 
+              type="text" 
+              class="form-input"
+              placeholder="alice@example.com, bob@example.com"
+            >
+          </div>
           <div class="form-group">
             <label>Event Color:</label>
             <div class="color-picker">
@@ -692,10 +724,11 @@ const updateEventData = ref({
   id: null,
   title: '',
   description: '',
+  location: '',
+  attendees: '',
   start_time: '',
   end_time: '',
-  location: '',
-  colorId: '',
+  colorId: ''
 });
 
 const allEvents = computed (()=> [
@@ -793,6 +826,7 @@ async function updateEvent() {
         title: updateEventData.value.title,
         description: updateEventData.value.description,
         location: updateEventData.value.location,
+        attendees: updateEventData.value.attendees,
         colorId: updateEventData.value.colorId,
         start_time: updateEventData.value.start_time,
         end_time: updateEventData.value.end_time
@@ -820,6 +854,7 @@ function openUpdateForm(event) {
     title: event.summary || event.title || '',
     description: event.description || '',
     location: event.location || '',
+    attendees: event.attendees ? event.attendees.map(a => a.email).join(', ') : '',
     colorId: event.colorId || event.color_id || '1',
     start_time: formatDateTimeForInput(event.start?.date_time || event.start_time),
     end_time: formatDateTimeForInput(event.end?.date_time || event.end_time)
@@ -856,6 +891,7 @@ function cancelUpdate() {
     start_time: '',
     end_time: '' ,
     location: '',
+    attendees: '',
     colorId: '1',
   };
 }
