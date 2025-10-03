@@ -13,6 +13,25 @@
           + New Event
         </button>
       </div>
+      
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <input 
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search events by title, description, or location..."
+            class="search-input"
+          >
+          <button 
+            v-if="searchQuery" 
+            @click="clearSearch" 
+            class="search-clear-btn"
+            title="Clear search"
+          >
+            ×
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="showEventForm" class="event-form-overlay">
@@ -106,215 +125,402 @@
       </div>
     </div>
 
-    <!-- ongoingEvents -->
-    <div class="events-section" >
-      <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
-      
-      <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading your past calendar events...</p>
-      </div>
-      
-      <div v-else-if="ongoingEvents.length === 0" class="no-events">
-        <p>No past events found.</p>
-        <p v-if="!loading">Try creating your first event!</p>
-      </div>
-      
-      <div v-else class="events-grid">
-        <div 
-          v-for="oEvent in ongoingEvents" 
-          :key="oEvent.id" 
-          class="event-card"
-          :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
-          :style="{
-            borderLeft: `5px solid ${getEventColor(oEvent)}`,
-            borderRight: `5px solid ${getEventColor(oEvent)}`
-          }"
-        >
-          <div class="event-header">
-            <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
-          </div>
-          
-          <p v-if="oEvent.description" class="event-description">
-            {{ oEvent.description }}
-          </p>
-          <div class="event-location" v-if="oEvent.location">
-            <strong>Location:</strong> {{ oEvent.location }}
-          </div>
-          <div class="event-times">
-            <div class="event-time">
-              <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
-            </div>
-            <div class="event-time">
-              <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
-            </div>
-          </div>
-          <a 
-            v-if="oEvent.html_link" 
-            :href="oEvent.html_link" 
-            target="_blank" 
-            class="event-link"
+    <div v-if="!isSearching">
+      <!-- ongoingEvents -->
+      <div class="events-section" >
+        <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
+        
+        <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading your past calendar events...</p>
+        </div>
+        
+        <div v-else-if="ongoingEvents.length === 0" class="no-events">
+          <p>No past events found.</p>
+          <p v-if="!loading">Try creating your first event!</p>
+        </div>
+        
+        <div v-else class="events-grid">
+          <div 
+            v-for="oEvent in ongoingEvents" 
+            :key="oEvent.id" 
+            class="event-card"
+            :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+            :style="{
+              borderLeft: `5px solid ${getEventColor(oEvent)}`,
+              borderRight: `5px solid ${getEventColor(oEvent)}`
+            }"
           >
-            View in Google Calendar
-          </a>
-          <div class="event-actions">
-            <button 
-              @click="openUpdateForm(oEvent)" 
-              class="btn-edit"> Edit
-            </button>
-            <button 
-              @click="deleteEvent(oEvent.id)" 
-              class="btn-delete"
-              :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
-              :title="'Delete ' + (oEvent.title || 'event')"
+            <div class="event-header">
+              <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
+            </div>
+            
+            <p v-if="oEvent.description" class="event-description">
+              {{ oEvent.description }}
+            </p>
+            <div class="event-location" v-if="oEvent.location">
+              <strong>Location:</strong> {{ oEvent.location }}
+            </div>
+            <div class="event-times">
+              <div class="event-time">
+                <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
+              </div>
+              <div class="event-time">
+                <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
+              </div>
+            </div>
+            <a 
+              v-if="oEvent.html_link" 
+              :href="oEvent.html_link" 
+              target="_blank" 
+              class="event-link"
+            >
+              View in Google Calendar
+            </a>
+            <div class="event-actions">
+              <button 
+                @click="openUpdateForm(oEvent)" 
+                class="btn-edit"> Edit
+              </button>
+              <button 
+                @click="deleteEvent(oEvent.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+                :title="'Delete ' + (oEvent.title || 'event')"
+                >
+                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- upcomingEvents -->
+      <div class="events-section">
+        <h3>Upcoming Events ({{ events.length }})</h3>
+        
+        <div v-if="loading && events.length === 0" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading your calendar events...</p>
+        </div>
+        
+        <div v-else-if="events.length === 0" class="no-events">
+          <p>No upcoming events found.</p>
+          <p v-if="!loading">Try creating your first event!</p>
+        </div>
+        
+        <div v-else class="events-grid">
+          <div 
+            v-for="event in events" 
+            :key="event.id" 
+            class="event-card"
+            :class="{ 'deleting': deletingEvents.includes(event.id) }"
+            :style="{
+              borderLeft: `5px solid ${getEventColor(event)}`,
+              borderRight: `5px solid ${getEventColor(event)}`
+            }"
+          >
+            <div class="event-header">
+              <h4 class="event-title">{{ event.summary || event.title }}</h4>
+            </div>
+            
+            <p v-if="event.description" class="event-description">
+              {{ event.description }}
+            </p>
+            <div class="event-location" v-if="event.location">
+              <strong>Location:</strong> {{ event.location }}
+            </div>
+            <div class="event-times">
+              <div class="event-time">
+                <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
+              </div>
+              <div class="event-time">
+                <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
+              </div>
+            </div>
+            <a 
+              v-if="event.html_link" 
+              :href="event.html_link" 
+              target="_blank" 
+              class="event-link"
+            >
+              View in Google Calendar
+            </a>
+            <div class="event-actions">
+                <button 
+                  @click="openUpdateForm(event)" 
+                  class="btn-edit"> Edit
+                </button>
+                <button 
+                  @click="deleteEvent(event.id)" 
+                  class="btn-delete"
+                  :disabled="deletingEvent || deletingEvents.includes(event.id)"
+                  :title="'Delete ' + (event.title || 'event')"
+                >
+                  <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                  <span v-else>🗑️</span>
+                </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- pastEvents -->
+      <div class="events-section">
+        <h3>Past Events ({{ pastEvents.length }})</h3>
+        
+        <div v-if="loading && pastEvents.length === 0" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading your past calendar events...</p>
+        </div>
+        
+        <div v-else-if="pastEvents.length === 0" class="no-events">
+          <p>No past events found.</p>
+          <p v-if="!loading">Try creating your first event!</p>
+        </div>
+        
+        <div v-else class="events-grid">
+          <div 
+            v-for="pEvent in pastEvents" 
+            :key="pEvent.id" 
+            class="event-card"
+            :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+            :style="{
+              borderLeft: `5px solid ${getEventColor(pEvent)}`,
+              borderRight: `5px solid ${getEventColor(pEvent)}`
+            }"
+          >
+            <div class="event-header">
+              <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
+            </div>
+            
+            <p v-if="pEvent.description" class="event-description">
+              {{ pEvent.description }}
+            </p>
+            <div class="event-location" v-if="pEvent.location">
+              <strong>Location:</strong> {{ pEvent.location }}
+            </div>
+            <div class="event-times">
+              <div class="event-time">
+                <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
+              </div>
+              <div class="event-time">
+                <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
+              </div>
+            </div>
+            <a 
+              v-if="pEvent.html_link" 
+              :href="pEvent.html_link" 
+              target="_blank" 
+              class="event-link"
+            >
+              View in Google Calendar
+            </a>
+            <div class="event-actions">
+              <button 
+                @click="openUpdateForm(pEvent)" 
+                class="btn-edit"> Edit
+              </button>
+              <button 
+                @click="deleteEvent(pEvent.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+                :title="'Delete ' + (pEvent.title || 'event')"
               >
-              <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
+              <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
               <span v-else>🗑️</span>
-            </button>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- upcomingEvents -->
-    <div class="events-section">
-      <h3>Upcoming Events ({{ events.length }})</h3>
-      
-      <div v-if="loading && events.length === 0" class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading your calendar events...</p>
-      </div>
-      
-      <div v-else-if="events.length === 0" class="no-events">
-        <p>No upcoming events found.</p>
-        <p v-if="!loading">Try creating your first event!</p>
-      </div>
-      
-      <div v-else class="events-grid">
-        <div 
-          v-for="event in events" 
-          :key="event.id" 
-          class="event-card"
-          :class="{ 'deleting': deletingEvents.includes(event.id) }"
-          :style="{
-            borderLeft: `5px solid ${getEventColor(event)}`,
-            borderRight: `5px solid ${getEventColor(event)}`
-          }"
-        >
-          <div class="event-header">
-            <h4 class="event-title">{{ event.summary || event.title }}</h4>
-          </div>
-          
-          <p v-if="event.description" class="event-description">
-            {{ event.description }}
-          </p>
-          <div class="event-location" v-if="event.location">
-            <strong>Location:</strong> {{ event.location }}
-          </div>
-          <div class="event-times">
-            <div class="event-time">
-              <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
-            </div>
-            <div class="event-time">
-              <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
-            </div>
-          </div>
-          <a 
-            v-if="event.html_link" 
-            :href="event.html_link" 
-            target="_blank" 
-            class="event-link"
+    <div v-else class="search-results">
+      <!-- ongoingEvents searching-->
+      <div v-if="searchedEventsByType.ongoing.length > 0" class="events-section">
+        <h3 class="search-category">
+          <span class="category-badge ongoing">Ongoing</span>
+          Events ({{ searchedEventsByType.ongoing.length }})
+        </h3>
+        <div class="events-grid">
+          <div 
+            v-for="oEvent in searchedEventsByType.ongoing" 
+            :key="oEvent.id" 
+            class="event-card"
+            :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+            :style="{
+              borderLeft: `5px solid ${getEventColor(oEvent)}`,
+              borderRight: `5px solid ${getEventColor(oEvent)}`
+            }"
           >
-            View in Google Calendar
-          </a>
-          <div class="event-actions">
+            <div class="event-header">
+              <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
+            </div>
+            <p v-if="oEvent.description" class="event-description">
+              {{ oEvent.description }}
+            </p>
+            <div class="event-location" v-if="oEvent.location">
+              <strong>Location:</strong> {{ oEvent.location }}
+            </div>
+            <div class="event-times">
+              <div class="event-time">
+                <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
+              </div>
+              <div class="event-time">
+                <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
+              </div>
+            </div>
+            <a 
+              v-if="oEvent.html_link" 
+              :href="oEvent.html_link" 
+              target="_blank" 
+              class="event-link"
+            >
+              View in Google Calendar
+            </a>
+            <div class="event-actions">
+              <button @click="openUpdateForm(oEvent)" class="btn-edit">Edit</button>
               <button 
-                @click="openUpdateForm(event)" 
-                class="btn-edit"> Edit
+                @click="deleteEvent(oEvent.id)" 
+                class="btn-delete"
+                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+              >
+                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- upcomingEvents -->
+      <div v-if="searchedEventsByType.upcoming.length > 0" class="events-section">
+        <h3 class="search-category">
+          <span class="category-badge upcoming">Upcoming</span>
+          Events ({{ searchedEventsByType.upcoming.length }})
+        </h3>
+        <div class="events-grid">
+          <div 
+            v-for="event in searchedEventsByType.upcoming" 
+            :key="event.id" 
+            class="event-card"
+            :class="{ 'deleting': deletingEvents.includes(event.id) }"
+            :style="{
+              borderLeft: `5px solid ${getEventColor(event)}`,
+              borderRight: `5px solid ${getEventColor(event)}`
+            }"
+          >
+            <!-- Your existing event card content -->
+            <div class="event-header">
+              <h4 class="event-title">{{ event.summary || event.title }}</h4>
+            </div>
+            <p v-if="event.description" class="event-description">
+              {{ event.description }}
+            </p>
+            <div class="event-location" v-if="event.location">
+              <strong>Location:</strong> {{ event.location }}
+            </div>
+            <div class="event-times">
+              <div class="event-time">
+                <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
+              </div>
+              <div class="event-time">
+                <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
+              </div>
+            </div>
+            <a 
+              v-if="event.html_link" 
+              :href="event.html_link" 
+              target="_blank" 
+              class="event-link"
+            >
+              View in Google Calendar
+            </a>
+            <div class="event-actions">
+              <button @click="openUpdateForm(event)" class="btn-edit">Edit</button>
               <button 
                 @click="deleteEvent(event.id)" 
                 class="btn-delete"
                 :disabled="deletingEvent || deletingEvents.includes(event.id)"
-                :title="'Delete ' + (event.title || 'event')"
               >
                 <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
                 <span v-else>🗑️</span>
               </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- pastEvents -->
+      <div v-if="searchedEventsByType.past.length > 0" class="events-section">
+          <h3 class="search-category">
+            <span class="category-badge past">Past</span>
+            Events ({{ searchedEventsByType.past.length }})
+          </h3>
+          <div class="events-grid">
+            <div 
+              v-for="pEvent in searchedEventsByType.past" 
+              :key="pEvent.id" 
+              class="event-card"
+              :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+              :style="{
+                borderLeft: `5px solid ${getEventColor(pEvent)}`,
+                borderRight: `5px solid ${getEventColor(pEvent)}`
+              }"
+            >
+              <!-- Your existing event card content -->
+              <div class="event-header">
+                <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
+              </div>
+              <p v-if="pEvent.description" class="event-description">
+                {{ pEvent.description }}
+              </p>
+              <div class="event-location" v-if="pEvent.location">
+                <strong>Location:</strong> {{ pEvent.location }}
+              </div>
+              <div class="event-times">
+                <div class="event-time">
+                  <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
+                </div>
+              </div>
+              <a 
+                v-if="pEvent.html_link" 
+                :href="pEvent.html_link" 
+                target="_blank" 
+                class="event-link"
+              >
+                View in Google Calendar
+              </a>
+              <div class="event-actions">
+                <button @click="openUpdateForm(pEvent)" class="btn-edit">Edit</button>
+                <button 
+                  @click="deleteEvent(pEvent.id)" 
+                  class="btn-delete"
+                  :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+                >
+                  <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+                  <span v-else>🗑️</span>
+                </button>
+              </div>
+            </div>
+          </div>
+      </div>
+      
+      <div v-if="searchedEvents.length === 0" class="no-search-results">
+        <div class="no-events">
+          <h3>No events found</h3>
+          <p>No events match "{{ searchQuery }}"</p>
+          <p>Try searching with different keywords or <button @click="clearSearch" class="btn-link">clear your search</button></p>
+        </div>
+      </div>
+
     </div>
 
-    <!-- pastEvents -->
-    <div class="events-section">
-      <h3>Past Events ({{ pastEvents.length }})</h3>
-      
-      <div v-if="loading && pastEvents.length === 0" class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading your past calendar events...</p>
-      </div>
-      
-      <div v-else-if="pastEvents.length === 0" class="no-events">
-        <p>No past events found.</p>
-        <p v-if="!loading">Try creating your first event!</p>
-      </div>
-      
-      <div v-else class="events-grid">
-        <div 
-          v-for="pEvent in pastEvents" 
-          :key="pEvent.id" 
-          class="event-card"
-          :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
-          :style="{
-            borderLeft: `5px solid ${getEventColor(pEvent)}`,
-            borderRight: `5px solid ${getEventColor(pEvent)}`
-          }"
-        >
-          <div class="event-header">
-            <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
-          </div>
-          
-          <p v-if="pEvent.description" class="event-description">
-            {{ pEvent.description }}
-          </p>
-          <div class="event-location" v-if="pEvent.location">
-            <strong>Location:</strong> {{ pEvent.location }}
-          </div>
-          <div class="event-times">
-            <div class="event-time">
-              <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
-            </div>
-            <div class="event-time">
-              <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
-            </div>
-          </div>
-          <a 
-            v-if="pEvent.html_link" 
-            :href="pEvent.html_link" 
-            target="_blank" 
-            class="event-link"
-          >
-            View in Google Calendar
-          </a>
-          <div class="event-actions">
-            <button 
-              @click="openUpdateForm(pEvent)" 
-              class="btn-edit"> Edit
-            </button>
-            <button 
-              @click="deleteEvent(pEvent.id)" 
-              class="btn-delete"
-              :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
-              :title="'Delete ' + (pEvent.title || 'event')"
-            >
-            <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
-            <span v-else>🗑️</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div v-if="showUpdateForm" class="event-form-overlay">
       <div class="event-form">
@@ -446,6 +652,8 @@ const showUpdateForm = ref(false);
 const showDeleteConfirm = ref(false);
 const eventToDelete = ref(null);
 const deletingEvents = ref([]); 
+const searchQuery = ref('');
+
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
   { id: '2', name: 'Sage', hex: '#33b679' },
@@ -478,6 +686,59 @@ const updateEventData = ref({
   location: '',
   colorId: ''
 });
+
+const allEvents = computed (()=> [
+  ...ongoingEvents.value,
+  ...events.value,
+  ...pastEvents.value
+]);
+
+
+const searchedEvents = computed(() => {
+  if (!searchQuery.value) return allEvents.value;
+  
+  const query = searchQuery.value.toLowerCase();
+  return allEvents.value.filter(event => 
+    (event.title?.toLowerCase().includes(query) ||
+     event.summary?.toLowerCase().includes(query) ||
+     event.description?.toLowerCase().includes(query) ||
+     event.location?.toLowerCase().includes(query))
+  );
+});
+
+const searchedEventsByType = computed(() => {
+  const now = new Date();
+  const ongoing = [];
+  const upcoming = [];
+  const past = [];
+  
+  searchedEvents.value.forEach(event => {
+    const start = new Date(event.start_time || event.start?.date_time);
+    const end = new Date(event.end_time || event.end?.date_time);
+    
+    if (start <= now && end >= now) {
+      ongoing.push(event);
+    } else if (start > now) {
+      upcoming.push(event);
+    } else {
+      past.push(event);
+    }
+  });
+  
+  return { ongoing, upcoming, past };
+});
+
+const searchResultsInfo = computed(() => {
+  const { ongoing, upcoming, past } = searchedEventsByType.value;
+  return {
+    ongoing: ongoing.length,
+    upcoming: upcoming.length,
+    past: past.length,
+    total: ongoing.length + upcoming.length + past.length
+  };
+});
+
+const isSearching = computed(() => searchQuery.value.length > 0);
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
 const pastEvents = computed(() => store.getters['calendar/pastEvents']);
@@ -627,11 +888,10 @@ function getEventColor(event) {
   const colorId = event.colorId || event.color_id || '1';
   const color = eventColors.value.find(c => c.id === colorId);
   return color ? color.hex : '#7986cb'; 
-}
+}  
 
-function getEventBackgroundColor(event) {
-  const color = getEventColor(event);
-  return `${color}15`; 
+function clearSearch() {
+  searchQuery.value = '';
 }
 </script>
 
@@ -680,7 +940,7 @@ function getEventBackgroundColor(event) {
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .form-group label {
@@ -1000,4 +1260,15 @@ function getEventBackgroundColor(event) {
   transform: scale(1.1);
 }
 
+.search-input {
+  padding: 10px;
+  border-radius: 5px;
+}
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+.no-search-results {
+  min-width: 700px;
+}
 </style>
