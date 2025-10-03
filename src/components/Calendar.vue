@@ -86,8 +86,18 @@
               </div>
             </div>
           </div>
-
+          
           <div class="form-group">
+            <label>Recurrence:</label>
+            <select v-model="newEvent.recurrence">
+              <option value="">None</option>
+              <option value="RRULE:FREQ=DAILY;COUNT=7">Daily</option>
+              <option value="RRULE:FREQ=WEEKLY;COUNT=4">Weekly</option>
+              <option value="RRULE:FREQ=MONTHLY;COUNT=3">Monthly</option>
+            </select>
+          </div>
+
+          <div class="form-group">  
             <label>Start Time:</label>
             <input 
               v-model="newEvent.start_time" 
@@ -674,7 +684,8 @@ const newEvent = ref({
   start_time: '',
   end_time: '',
   location: '',
-  colorId: '1'
+  colorId: '1',
+  recurrence:''
 });
 
 const updateEventData = ref({
@@ -684,7 +695,7 @@ const updateEventData = ref({
   start_time: '',
   end_time: '',
   location: '',
-  colorId: ''
+  colorId: '',
 });
 
 const allEvents = computed (()=> [
@@ -726,16 +737,6 @@ const searchedEventsByType = computed(() => {
   });
   
   return { ongoing, upcoming, past };
-});
-
-const searchResultsInfo = computed(() => {
-  const { ongoing, upcoming, past } = searchedEventsByType.value;
-  return {
-    ongoing: ongoing.length,
-    upcoming: upcoming.length,
-    past: past.length,
-    total: ongoing.length + upcoming.length + past.length
-  };
 });
 
 const isSearching = computed(() => searchQuery.value.length > 0);
@@ -794,6 +795,7 @@ async function updateEvent() {
         colorId: updateEventData.value.colorId,
         start_time: updateEventData.value.start_time,
         end_time: updateEventData.value.end_time
+        
       }
     });
     window.$toast.success('Event updated successfully!');

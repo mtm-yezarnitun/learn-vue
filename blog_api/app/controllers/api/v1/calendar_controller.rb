@@ -13,7 +13,7 @@ module Api::V1
       if service.nil?
         return render json: { error: 'Google Calendar not connected' }, status: :unauthorized
       end
-
+      
       events = service.list_events(
         'primary',
         single_events: true,
@@ -41,6 +41,9 @@ module Api::V1
       end
 
       begin
+        recurrence = params[:recurrence] || []
+        recurrence = [recurrence] if recurrence.is_a?(String)
+
         user_timezone = 'Asia/Yangon'
         start_time = Time.find_zone(user_timezone).parse(params[:start_time])
         end_time = Time.find_zone(user_timezone).parse(params[:end_time])
@@ -54,6 +57,7 @@ module Api::V1
           description: params[:description],
           location: params[:location], 
           color_id: params[:colorId],
+          recurrence: recurrence,
           start: Google::Apis::CalendarV3::EventDateTime.new(
             date_time: start_time.rfc3339,
             time_zone: user_timezone
@@ -65,6 +69,9 @@ module Api::V1
         )
 
         result = service.insert_event('primary', event)
+
+        sleep(2)
+
         render json: { event: calendar_event_to_json(result) }
 
       rescue ArgumentError => e
@@ -87,6 +94,8 @@ module Api::V1
       end
 
       begin
+
+
         user_timezone = 'Asia/Yangon'
         
         start_time = if params[:start_time].present?
@@ -113,7 +122,7 @@ module Api::V1
             date_time: start_time.rfc3339,
             time_zone: user_timezone
           )
-        end
+        end        
 
         if end_time
           existing_event.end = Google::Apis::CalendarV3::EventDateTime.new(
@@ -168,6 +177,7 @@ module Api::V1
         description: event.description,
         location: event.location,
         colorId: event.color_id,
+        recurrence: event.recurrence,
         start_time: event.start&.date_time,
         end_time: event.end&.date_time,
         html_link: event.html_link
