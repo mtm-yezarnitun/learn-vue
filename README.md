@@ -10,13 +10,7 @@
 
 - **Yarn** version : yarn 1.22.22
 
-- **Vue** version : (7.1.3.2)
+- **Vue** version : vue ^3.5.18
 
-- **Setup** Step 1 : gem install rails -v 7.1.3.2
-                 2 : bundle install
-                 3 : rails db:create db:migrate
-                 4 : nvm install
-                 5 : npm i 
-                 6 : npm run dev
-                 7 : rails s
+- **Setup** - gem install rails -v 7.1.3.2 - bundle install - rails db:create db:migrate - nvm install - npm i - npm run dev - rails s
                     
