@@ -180,30 +180,30 @@ module Api::V1
     end
 
     private
-    def calendar_event_to_json(event)
-      processed_attendees = event.attendees&.map do |attendee|
-        if attendee.respond_to?(:email)
-          attendee.email
-        elsif attendee.is_a?(String)
-          attendee
-        else
-          attendee.to_s
-        end
-      end || []
+      def calendar_event_to_json(event)
+        processed_attendees = event.attendees&.map do |attendee|
+          if attendee.respond_to?(:email)
+            attendee.email
+          elsif attendee.is_a?(String)
+            attendee
+          else
+            attendee.to_s
+          end
+        end || []
 
-      Rails.logger.info "Processed attendees: #{processed_attendees.inspect}"
-      {
-        id: event.id,
-        title: event.summary,
-        description: event.description,
-        location: event.location,
-        attendees: event.attendees&.map { |a| a.email } || [],
-        colorId: event.color_id,
-        recurrence: event.recurrence,
-        start_time: event.start&.date_time,
-        end_time: event.end&.date_time,
-        html_link: event.html_link
-      }
-    end
+        Rails.logger.info "Processed attendees: #{processed_attendees.inspect}"
+        {
+          id: event.id,
+          title: event.summary,
+          description: event.description,
+          location: event.location,
+          attendees: event.attendees&.map { |a| a.email } || [],
+          colorId: event.color_id,
+          recurrence: event.recurrence,
+          start_time: event.start&.date_time,
+          end_time: event.end&.date_time,
+          html_link: event.html_link
+        }
+      end
   end
 end

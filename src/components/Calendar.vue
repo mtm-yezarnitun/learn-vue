@@ -13,6 +13,17 @@
         <button @click="showEventForm = true" class="btn btn-success">
           + New Event
         </button>
+
+        <button 
+          v-if="totalEventsCount > 0"
+          @click="deleteAllEvents" 
+          class="btn btn-danger"
+          :disabled="deletingAllEvents || loading"
+          title="Delete all events from your calendar"
+        >
+          🗑️ Delete All Events
+        </button>
+
       </div>
       
       <div class="search-container">
@@ -324,7 +335,7 @@
             <div class="event-location" v-if="pEvent.location">
               <strong>Location:</strong> {{ pEvent.location }}
             </div>
-            <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-attendees">
+            <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
             </div>
             <div class="event-times">
@@ -677,6 +688,30 @@
       </div>
     </div>
 
+    <div v-if="showDeleteAllConfirm" class="modal-overlay">
+      <div class="modal">
+        <h3>Delete All Events</h3>
+        <p>⚠️ Are you sure you want to delete <strong>all {{ totalEventsCount }} events</strong> from your calendar?</p>
+        <p class="text-muted">This will remove all ongoing, upcoming, and past events.</p>
+        <div class="modal-actions">
+          <button 
+            @click="confirmDeleteAll" 
+            class="btn btn-danger"
+            :disabled="deletingAllEvents"
+          >
+            {{ deletingAllEvents ? 'Deleting...' : `Yes, Delete All ${totalEventsCount} Events` }}
+          </button>
+          <button 
+            @click="cancelDeleteAll" 
+            class="btn btn-secondary"
+            :disabled="deletingAllEvents"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -691,7 +726,9 @@ const router = useRouter();
 const showEventForm = ref(false);
 const showUpdateForm = ref(false);
 const showDeleteConfirm = ref(false);
+const showDeleteAllConfirm = ref(false);
 const eventToDelete = ref(null);
+const deletingAllEvents = ref(false); 
 const deletingEvents = ref([]); 
 const searchQuery = ref('');
 
@@ -782,7 +819,7 @@ const updatingEvent = computed(() => store.getters['calendar/editingEvent']);
 const deletingEvent = computed(() => store.getters['calendar/deletingEvent']);
 const error = computed(() => store.getters['calendar/error']);
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
-
+const totalEventsCount = computed(() => ongoingEvents.value.length + events.value.length + pastEvents.value.length );
 
 onMounted(() => {
   if (!isAuthenticated.value) {
@@ -806,10 +843,17 @@ async function createEvent() {
       return;
     }
     try {
-      
+      const isRecurring = newEvent.value.recurrence && newEvent.value.recurrence !== 'null';
+    
       await store.dispatch('calendar/createEvent', newEvent.value);
-      window.$toast.success('Event created successfully!');
       cancelCreate();
+    
+      if (isRecurring) {
+          window.$toast.success('Recurring event created! Refreshing events...');
+          await fetchEvents();
+      } else {
+          window.$toast.success('Event created successfully!');
+      }
     } catch (error) {
       console.error('Failed to create event:', error);
     }
@@ -845,6 +889,48 @@ function deleteEvent(eventId) {
              || ongoingEvents.value.find( e => e.id === eventId);
   eventToDelete.value = event;
   showDeleteConfirm.value = true;
+}
+
+async function deleteAllEvents() {
+  if (totalEventsCount.value === 0) {
+    window.$toast.warning('No events to delete');
+    return;
+  }
+
+  showDeleteAllConfirm.value = true;
+}
+
+async function confirmDeleteAll() {
+  if (totalEventsCount.value === 0) return;
+  
+  deletingAllEvents.value = true;
+  
+  try {
+    const allEventIds = allEvents.value.map(event => event.id);
+    
+      for (const eventId of allEventIds) {
+        try {
+          await store.dispatch('calendar/deleteEvent', eventId);
+        } catch (error) {
+          console.error(`Failed to delete event ${eventId}:`, error);
+        }
+      }
+    
+    window.$toast.success(`All ${allEventIds.length} events deleted successfully!`);
+    cancelDeleteAll();
+    
+    await fetchEvents();
+    
+  } catch (error) {
+    console.error('Failed to delete all events:', error);
+    window.$toast.error('Failed to delete all events. Please try again.');
+  } finally {
+    deletingAllEvents.value = false;
+  }
+}
+
+function cancelDeleteAll() {
+  showDeleteAllConfirm.value = false;
 }
 
 function openUpdateForm(event) {
@@ -905,10 +991,12 @@ function cancelCreate() {
   newEvent.value = {
     title: '',
     description: '',
+    location: '',
+    attendees: '',
     start_time: '',
     end_time: '',
     colorId: '1',
-    recurrence: ''
+    recurrence: '',
   };
 }
 
