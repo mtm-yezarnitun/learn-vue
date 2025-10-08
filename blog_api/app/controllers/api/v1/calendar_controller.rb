@@ -21,7 +21,9 @@ module Api::V1
         time_min: 1.year.ago.rfc3339
       )
 
-      render json: { events: events.items || [] }
+      formatted_events = events.items.map { |event| calendar_event_to_json(event) }
+
+      render json: { events: formatted_events }
     rescue Google::Apis::AuthorizationError => e
       Rails.logger.error "Calendar authorization error: #{e.message}"
       render json: { error: 'Calendar access expired. Please reconnect.' }, status: :unauthorized
@@ -99,9 +101,6 @@ module Api::V1
       end
 
       begin
-
-   
-
         user_timezone = 'Asia/Yangon'
         
         start_time = if params[:start_time].present?
@@ -144,11 +143,6 @@ module Api::V1
 
         result = service.update_event('primary', params[:id], existing_event)
 
-        if result.start&.date_time
-          new_start_time = result.start.date_time.to_time
-          ReminderJob.set(wait_until: new_start_time - 30.minutes).perform_later(current_user.id, result.id)
-        end
-
         render json: { event: calendar_event_to_json(result) }
 
       rescue ArgumentError => e
@@ -187,12 +181,23 @@ module Api::V1
 
     private
     def calendar_event_to_json(event)
+      processed_attendees = event.attendees&.map do |attendee|
+        if attendee.respond_to?(:email)
+          attendee.email
+        elsif attendee.is_a?(String)
+          attendee
+        else
+          attendee.to_s
+        end
+      end || []
+
+      Rails.logger.info "Processed attendees: #{processed_attendees.inspect}"
       {
         id: event.id,
         title: event.summary,
         description: event.description,
         location: event.location,
-        attendees: event.attendees&.map { |a| a.is_a?(String) ? a : a.email } || [],
+        attendees: event.attendees&.map { |a| a.email } || [],
         colorId: event.color_id,
         recurrence: event.recurrence,
         start_time: event.start&.date_time,

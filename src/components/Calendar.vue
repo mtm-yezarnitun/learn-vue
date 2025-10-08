@@ -251,9 +251,9 @@
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
             </div>
-            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
+          <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
-            </div>
+          </div>
             <div class="event-times">
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
@@ -390,7 +390,7 @@
             <div class="event-location" v-if="oEvent.location">
               <strong>Location:</strong> {{ oEvent.location }}
             </div>
-            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-attendees">
+            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
             </div>
             <div class="event-times">
@@ -441,7 +441,6 @@
               borderRight: `5px solid ${getEventColor(event)}`
             }"
           >
-            <!-- Your existing event card content -->
             <div class="event-header">
               <h4 class="event-title">{{ event.summary || event.title }}</h4>
             </div>
@@ -451,7 +450,7 @@
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
             </div>
-            <div v-if="event.attendees && event.attendees.length > 0" class="event-attendees">
+            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
             </div>
             <div class="event-times">
@@ -512,7 +511,7 @@
               <div class="event-location" v-if="pEvent.location">
                 <strong>Location:</strong> {{ pEvent.location }}
               </div>
-              <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-attendees">
+              <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
                 <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
               </div>
               <div class="event-times">
@@ -854,7 +853,7 @@ function openUpdateForm(event) {
     title: event.summary || event.title || '',
     description: event.description || '',
     location: event.location || '',
-    attendees: event.attendees ? event.attendees.map(a => a.email).join(', ') : '',
+    attendees: event.attendees.join(', ') || '',
     colorId: event.colorId || event.color_id || '1',
     start_time: formatDateTimeForInput(event.start?.date_time || event.start_time),
     end_time: formatDateTimeForInput(event.end?.date_time || event.end_time)
