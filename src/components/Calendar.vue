@@ -1,619 +1,431 @@
 <template>
   <div class="calendar-container">
-    <div class="calendar-header">
-      <div class="calendar-actions">
-        <button 
-          @click="fetchEvents" 
-          class="btn btn-primary" 
-          :disabled="loading"
-        >
-          {{ loading ? 'Loading...' : 'Refresh' }}
-        </button>
+    <div v-if="currentView === 'list'">
+      <div class="calendar-header">
+        <div class="calendar-actions">
+          <button 
+            @click="fetchEvents" 
+            class="btn btn-primary" 
+            :disabled="loading"
+          >
+            {{ loading ? 'Loading...' : 'Refresh' }}
+          </button>
 
-        <button @click="showEventForm = true" class="btn btn-success">
-          Add Event
-        </button>
+          <button @click="showEventForm = true" class="btn btn-success">
+            Add Event
+          </button>
 
-        <button 
-          v-if="totalEventsCount > 0"
-          @click="deleteAllEvents" 
-          class="btn btn-danger"
-          :disabled="deletingAllEvents || loading"
-          title="Delete all events from your calendar"
-        >
-          🗑️ Delete All Events
-        </button> 
+          <button 
+            v-if="totalEventsCount > 0"
+            @click="deleteAllEvents" 
+            class="btn btn-danger"
+            :disabled="deletingAllEvents || loading"
+            title="Delete all events from your calendar"
+          >
+            🗑️ Delete All Events
+          </button> 
 
-      </div>
-    </div>
-
-    <div class="calendar-header">
-      <div class="calendar-actions">
-        <div v-if="selectedEvents.size > 0" class="selection-actions-bar">
-          <div class="selection-info">
-            <strong>{{ selectedEvents.size }}</strong> event(s) selected
-          </div>
-          <div class="selection-buttons">
+          <div class="view-toggle">
             <button 
-              @click="deleteSelectedEvents" 
-              class="btn btn-danger btn-sm"
-              :disabled="deletingSelectedEvents"
+              @click="currentView = 'list'" 
+              :class="{ active: currentView === 'list' }"
+              class="btn btn-outline"
             >
-              Delete Selected
+              📋 List
             </button>
+            <button 
+              @click="currentView = 'calendar'" 
+              :class="{ active: currentView === 'calendar' }"
+              class="btn btn-outline"
+            >
+              📅 Calendar
+            </button>
+          </div>
+        
+        </div>
+      </div>
+
+      <div class="calendar-header">
+        <div class="calendar-actions">
+          <div v-if="selectedEvents.size > 0" class="selection-actions-bar">
+            <div class="selection-info">
+              <strong>{{ selectedEvents.size }}</strong> event(s) selected
+            </div>
+            <div class="selection-buttons">
+              <button 
+                @click="deleteSelectedEvents" 
+                class="btn btn-danger btn-sm"
+                :disabled="deletingSelectedEvents"
+              >
+                Delete Selected
+              </button>
+              <button 
+                @click="selectAllEvents" 
+                class="btn btn-outline-primary btn-sm"
+              >
+                Select All
+              </button>
+              <button 
+                @click="clearSelection" 
+                class="btn btn-outline-secondary btn-sm"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="totalEventsCount > 0" class="bulk-selection-options">
             <button 
               @click="selectAllEvents" 
-              class="btn btn-outline-primary btn-sm"
+              class="btn btn-outline-primary btn-sm btn-sl"
             >
-              Select All
-            </button>
-            <button 
-              @click="clearSelection" 
-              class="btn btn-outline-secondary btn-sm"
-            >
-              Clear
+              Select Events
             </button>
           </div>
-        </div>
 
-        <div v-else-if="totalEventsCount > 0" class="bulk-selection-options">
-          <button 
-            @click="selectAllEvents" 
-            class="btn btn-outline-primary btn-sm btn-sl"
-          >
-            Select Events
-          </button>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="calendar-header">
-      <div class="search-container">
-        <div class="search-input-wrapper">
-          <input 
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search events by title, description, or location..."
-            class="search-input"
-          >
-          <button 
-            v-if="searchQuery" 
-            @click="clearSearch" 
-            class="search-clear-btn"
-            title="Clear search"
-          >
-            ×
-          </button>
         </div>
       </div>
-    </div>
 
-    <div v-if="showEventForm" class="event-form-overlay">
-      <div class="event-form">
-        <h3>Create New Event</h3>
-        <div v-if="error" class="error-message">
-          {{ error }}
-          <button @click="clearError" class="btn-close">×</button>
+      <div class="calendar-header">
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <input 
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search events by title, description, or location..."
+              class="search-input"
+            >
+            <button 
+              v-if="searchQuery" 
+              @click="clearSearch" 
+              class="search-clear-btn"
+              title="Clear search"
+            >
+              ×
+            </button>
+          </div>
         </div>
-        <form @submit.prevent="createEvent">
-          <div class="form-group">
-            <label>Title:</label>
-            <input 
-              v-model="newEvent.title" 
-              type="text" 
-              required 
-              class="form-input"
-              placeholder="Meeting with team"
-            >
-          </div>
-          <div class="form-group">
-            <label>Description:</label>
-            <textarea 
-              v-model="newEvent.description" 
-              class="form-textarea"
-              placeholder="Add details about your event..."
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Location:</label>
-            <input 
-              v-model="newEvent.location" 
-              type="text" 
-              class="form-input"
-              placeholder="Office, Zoom, Restaurant..."
-            >
-          </div>
-          <div class="form-group">
-            <label>Attendees (emails, comma-separated):</label>
-            <input 
-              v-model="newEvent.attendees" 
-              type="text" 
-              class="form-input"
-              placeholder="alice@example.com, bob@example.com"
-            >
-          </div>
-          <div class="form-group">
-            <label>Event Color:</label>
-            <div class="color-picker">
-              <div 
-                v-for="color in eventColors" 
-                :key="color.id"
-                class="color-option"
-                :class="{ active: newEvent.colorId === color.id }"
-                :style="{ backgroundColor: color.hex }"
-                @click="newEvent.colorId = color.id"
-                :title="color.name"
-              >
-                <span v-if="newEvent.colorId === color.id">✓</span>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Recurrence:</label>
-            <select v-model="newEvent.recurrence">
-              <option value="null">None</option>
-              <option value="RRULE:FREQ=DAILY;COUNT=7">Daily</option>
-              <option value="RRULE:FREQ=WEEKLY;COUNT=4">Weekly</option>
-              <option value="RRULE:FREQ=MONTHLY;COUNT=3">Monthly</option>
-            </select>
-          </div>
-          <div class="form-group">  
-            <label>Start Time:</label>
-            <input 
-              v-model="newEvent.start_time" 
-              type="datetime-local" 
-              required 
-              class="form-input"
-            >
-          </div>
-          <div class="form-group">
-            <label>End Time:</label>
-            <input 
-              v-model="newEvent.end_time" 
-              type="datetime-local" 
-              required 
-              class="form-input"
-            >
-          </div>
-          <div class="form-actions">
-            <button 
-              type="submit" 
-              class="btn btn-primary" 
-              :disabled="creatingEvent"
-            >
-              {{ creatingEvent ? 'Creating...' : 'Create Event' }}
-            </button>
-            <button 
-              type="button" 
-              @click="cancelCreate" 
-              class="btn btn-secondary"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
 
-    <div v-if="!isSearching">
-      <!-- ongoingEvents -->
-      <div class="events-section" >
-        <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
-        
-        <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading your past calendar events...</p>
-        </div>
-        
-        <div v-else-if="ongoingEvents.length === 0" class="no-events">
-          <p>No past events found.</p>
-          <p v-if="!loading">Try creating your first event!</p>
-        </div>
-        
-        <div v-else class="events-grid">
-          <div 
-            v-for="oEvent in ongoingEvents" 
-            :key="oEvent.id" 
-            class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(oEvent.id),
-                      'selected': isEventSelected(oEvent.id)
-            }"
-            :style="{
-              borderLeft: `5px solid ${getEventColor(oEvent)}`,
-              borderRight: `5px solid ${getEventColor(oEvent)}`
-            }"
-          >
-            <div class="event-header">
+      <div v-if="showEventForm" class="event-form-overlay">
+        <div class="event-form">
+          <h3>Create New Event</h3>
+          <div v-if="error" class="error-message">
+            {{ error }}
+            <button @click="clearError" class="btn-close">×</button>
+          </div>
+          <form @submit.prevent="createEvent">
+            <div class="form-group">
+              <label>Title:</label>
               <input 
-                type="checkbox" 
-                :checked="isEventSelected(oEvent.id)"
-                @change="toggleEventSelection(oEvent.id)"
-                class="event-checkbox"
+                v-model="newEvent.title" 
+                type="text" 
+                required 
+                class="form-input"
+                placeholder="Meeting with team"
               >
-              <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
             </div>
-            
-            <p v-if="oEvent.description" class="event-description">
-              {{ oEvent.description }}
-            </p>
-
-            <div class="event-location" v-if="oEvent.location">
-              <strong>Location:</strong> {{ oEvent.location }}
+            <div class="form-group">
+              <label>Description:</label>
+              <textarea 
+                v-model="newEvent.description" 
+                class="form-textarea"
+                placeholder="Add details about your event..."
+              ></textarea>
             </div>
-
-            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
-              <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
+            <div class="form-group">
+              <label>Location:</label>
+              <input 
+                v-model="newEvent.location" 
+                type="text" 
+                class="form-input"
+                placeholder="Office, Zoom, Restaurant..."
+              >
             </div>
-
-            <div class="event-times">
-              <div class="event-day">
-                <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
-              </div>
+            <div class="form-group">
+              <label>Attendees (emails, comma-separated):</label>
+              <input 
+                v-model="newEvent.attendees" 
+                type="text" 
+                class="form-input"
+                placeholder="alice@example.com, bob@example.com"
+              >
             </div>
-            <a 
-              v-if="oEvent.html_link" 
-              :href="oEvent.html_link" 
-              target="_blank" 
-              class="event-link"
-            >
-              View in Google Calendar
-            </a>
-            <div class="event-actions">
-              <button 
-                @click="openUpdateForm(oEvent)" 
-                class="btn-edit"> Edit
-              </button>
-              <button 
-                @click="deleteEvent(oEvent.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
-                :title="'Delete ' + (oEvent.title || 'event')"
+            <div class="form-group">
+              <label>Event Color:</label>
+              <div class="color-picker">
+                <div 
+                  v-for="color in eventColors" 
+                  :key="color.id"
+                  class="color-option"
+                  :class="{ active: newEvent.colorId === color.id }"
+                  :style="{ backgroundColor: color.hex }"
+                  @click="newEvent.colorId = color.id"
+                  :title="color.name"
                 >
-                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
+                  <span v-if="newEvent.colorId === color.id">✓</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Recurrence:</label>
+              <select v-model="newEvent.recurrence">
+                <option value="null">None</option>
+                <option value="RRULE:FREQ=DAILY;COUNT=7">Daily</option>
+                <option value="RRULE:FREQ=WEEKLY;COUNT=4">Weekly</option>
+                <option value="RRULE:FREQ=MONTHLY;COUNT=3">Monthly</option>
+              </select>
+            </div>
+            <div class="form-group">  
+              <label>Start Time:</label>
+              <input 
+                v-model="newEvent.start_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-group">
+              <label>End Time:</label>
+              <input 
+                v-model="newEvent.end_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn btn-primary" 
+                :disabled="creatingEvent"
+              >
+                {{ creatingEvent ? 'Creating...' : 'Create Event' }}
+              </button>
+              <button 
+                type="button" 
+                @click="cancelCreate" 
+                class="btn btn-secondary"
+              >
+                Cancel
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 
-      <!-- upcomingEvents -->
-      <div class="events-section">
-        <h3>Upcoming Events ({{ events.length }})</h3>
-        
-        <div v-if="loading && events.length === 0" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading your calendar events...</p>
-        </div>
-        
-        <div v-else-if="events.length === 0" class="no-events">
-          <p>No upcoming events found.</p>
-          <p v-if="!loading">Try creating your first event!</p>
-        </div>
-        
-        <div v-else class="events-grid">
-          <div 
-            v-for="event in events" 
-            :key="event.id" 
-            class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(event.id),
-                      'selected': isEventSelected(event.id)
-             }"
-            :style="{
-              borderLeft: `5px solid ${getEventColor(event)}`,
-              borderRight: `5px solid ${getEventColor(event)}`
-            }"
-          >
-            <div class="event-header">
-              <input 
-                type="checkbox" 
-                :checked="isEventSelected(event.id)"
-                @change="toggleEventSelection(event.id)"
-                class="event-checkbox"
-              >
-              <h4 class="event-title">{{ event.summary || event.title }}</h4>
-            </div>
-            
-            <p v-if="event.description" class="event-description">
-              {{ event.description }}
-            </p>
-
-            <div class="event-location" v-if="event.location">
-              <strong>Location:</strong> {{ event.location }}
-            </div>
-
-            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
-                <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
-            </div>
-
-            <div class="event-times">
-              <div class="event-day">
-                <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
-              </div>
-            </div>
-            <a 
-              v-if="event.html_link" 
-              :href="event.html_link" 
-              target="_blank" 
-              class="event-link"
+      <div v-if="!isSearching">
+        <!-- ongoingEvents -->
+        <div class="events-section" >
+          <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
+          
+          <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading your past calendar events...</p>
+          </div>
+          
+          <div v-else-if="ongoingEvents.length === 0" class="no-events">
+            <p>No Ongoing events found.</p>
+            <p v-if="!loading">Try creating your first event!</p>
+          </div>
+          
+          <div v-else class="events-grid">
+            <div 
+              v-for="oEvent in ongoingEvents" 
+              :key="oEvent.id" 
+              class="event-card"
+              :class="{ 'deleting': deletingEvents.includes(oEvent.id),
+                        'selected': isEventSelected(oEvent.id)
+              }"
+              :style="{
+                borderLeft: `5px solid ${getEventColor(oEvent)}`,
+                borderRight: `5px solid ${getEventColor(oEvent)}`
+              }"
             >
-              View in Google Calendar
-            </a>
-            <div class="event-actions">
+              <div class="event-header">
+                <input 
+                  type="checkbox" 
+                  :checked="isEventSelected(oEvent.id)"
+                  @change="toggleEventSelection(oEvent.id)"
+                  class="event-checkbox"
+                >
+                <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
+              </div>
+              
+              <p v-if="oEvent.description" class="event-description">
+                {{ oEvent.description }}
+              </p>
+
+              <div class="event-location" v-if="oEvent.location">
+                <strong>Location:</strong> {{ oEvent.location }}
+              </div>
+
+              <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
+                <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
+              </div>
+
+              <div class="event-times">
+                <div class="event-day">
+                  <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
+                </div>
+              </div>
+              <a 
+                v-if="oEvent.html_link" 
+                :href="oEvent.html_link" 
+                target="_blank" 
+                class="event-link"
+              >
+                View in Google Calendar
+              </a>
+              <div class="event-actions">
                 <button 
-                  @click="openUpdateForm(event)" 
+                  @click="openUpdateForm(oEvent)" 
                   class="btn-edit"> Edit
                 </button>
                 <button 
-                  @click="deleteEvent(event.id)" 
+                  @click="deleteEvent(oEvent.id)" 
                   class="btn-delete"
-                  :disabled="deletingEvent || deletingEvents.includes(event.id)"
-                  :title="'Delete ' + (event.title || 'event')"
-                >
-                  <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                  :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+                  :title="'Delete ' + (oEvent.title || 'event')"
+                  >
+                  <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
                   <span v-else>🗑️</span>
                 </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- pastEvents -->
-      <div class="events-section">
-        <h3>Past Events ({{ pastEvents.length }})</h3>
-        
-        <div v-if="loading && pastEvents.length === 0" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading your past calendar events...</p>
-        </div>
-        
-        <div v-else-if="pastEvents.length === 0" class="no-events">
-          <p>No past events found.</p>
-          <p v-if="!loading">Try creating your first event!</p>
-        </div>
-        
-        <div v-else class="events-grid">
-          <div 
-            v-for="pEvent in pastEvents" 
-            :key="pEvent.id" 
-            class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(pEvent.id) ,
-                      'selected': isEventSelected(pEvent.id)
-            }"
-            :style="{
-              borderLeft: `5px solid ${getEventColor(pEvent)}`,
-              borderRight: `5px solid ${getEventColor(pEvent)}`
-            }"
-          >
-            <div class="event-header">
-              <input 
-                type="checkbox" 
-                :checked="isEventSelected(pEvent.id)"
-                @change="toggleEventSelection(pEvent.id)"
-                class="event-checkbox"
-              >
-              <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
-            </div>
-            
-            <p v-if="pEvent.description" class="event-description">
-              {{ pEvent.description }}
-            </p>
-
-            <div class="event-location" v-if="pEvent.location">
-              <strong>Location:</strong> {{ pEvent.location }}
-            </div>
-
-            <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
-              <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
-            </div>
-
-            <div class="event-times">
-              <div class="event-day">
-                <strong>Day:</strong> {{ formatDate(pEvent.start?.date_time || pEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
-              </div>
-            </div>
-            <a 
-              v-if="pEvent.html_link" 
-              :href="pEvent.html_link" 
-              target="_blank" 
-              class="event-link"
-            >
-              View in Google Calendar
-            </a>
-            <div class="event-actions">
-              <button 
-                @click="openUpdateForm(pEvent)" 
-                class="btn-edit"> Edit
-              </button>
-              <button 
-                @click="deleteEvent(pEvent.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
-                :title="'Delete ' + (pEvent.title || 'event')"
-              >
-              <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
-              <span v-else>🗑️</span>
-              </button>
-            </div>
+        <!-- upcomingEvents -->
+        <div class="events-section">
+          <h3>Upcoming Events ({{ events.length }})</h3>
+          
+          <div v-if="loading && events.length === 0" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading your calendar events...</p>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-else class="search-results">
-      <!-- ongoingEvents searching-->
-      <div v-if="searchedEventsByType.ongoing.length > 0" class="events-section">
-        <h3 class="search-category">
-          <span class="category-badge ongoing">Ongoing</span>
-          Events ({{ searchedEventsByType.ongoing.length }})
-        </h3>
-        <div class="events-grid">
-          <div 
-            v-for="oEvent in searchedEventsByType.ongoing" 
-            :key="oEvent.id" 
-            class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
-            :style="{
-              borderLeft: `5px solid ${getEventColor(oEvent)}`,
-              borderRight: `5px solid ${getEventColor(oEvent)}`
-            }"
-          >
-            <div class="event-header">
-              <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
-            </div>
-
-            <p v-if="oEvent.description" class="event-description">
-              {{ oEvent.description }}
-            </p>
-
-            <div class="event-location" v-if="oEvent.location">
-              <strong>Location:</strong> {{ oEvent.location }}
-            </div>
-
-            <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
-              <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
-            </div>
-
-            <div class="event-times">
-              <div class="event-day">
-                <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
-              </div>
-            </div>
-            <a 
-              v-if="oEvent.html_link" 
-              :href="oEvent.html_link" 
-              target="_blank" 
-              class="event-link"
-            >
-              View in Google Calendar
-            </a>
-            <div class="event-actions">
-              <button @click="openUpdateForm(oEvent)" class="btn-edit">Edit</button>
-              <button 
-                @click="deleteEvent(oEvent.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
-              >
-                <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
-              </button>
-            </div>
+          
+          <div v-else-if="events.length === 0" class="no-events">
+            <p>No upcoming events found.</p>
+            <p v-if="!loading">Try creating your first event!</p>
           </div>
-        </div>
-      </div>
-
-      <!-- upcomingEvents -->
-      <div v-if="searchedEventsByType.upcoming.length > 0" class="events-section">
-        <h3 class="search-category">
-          <span class="category-badge upcoming">Upcoming</span>
-          Events ({{ searchedEventsByType.upcoming.length }})
-        </h3>
-        <div class="events-grid">
-          <div 
-            v-for="event in searchedEventsByType.upcoming" 
-            :key="event.id" 
-            class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(event.id) }"
-            :style="{
-              borderLeft: `5px solid ${getEventColor(event)}`,
-              borderRight: `5px solid ${getEventColor(event)}`
-            }"
-          >
-            <div class="event-header">
-              <h4 class="event-title">{{ event.summary || event.title }}</h4>
-            </div>
-            <p v-if="event.description" class="event-description">
-              {{ event.description }}
-            </p>
-
-            <div class="event-location" v-if="event.location">
-              <strong>Location:</strong> {{ event.location }}
-            </div>
-
-            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
-              <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
-            </div>
-
-            <div class="event-times">
-              <div class="event-day">
-                <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
-              </div>
-              <div class="event-time">
-                <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
-              </div>
-            </div>
-            <a 
-              v-if="event.html_link" 
-              :href="event.html_link" 
-              target="_blank" 
-              class="event-link"
-            >
-              View in Google Calendar
-            </a>
-            <div class="event-actions">
-              <button @click="openUpdateForm(event)" class="btn-edit">Edit</button>
-              <button 
-                @click="deleteEvent(event.id)" 
-                class="btn-delete"
-                :disabled="deletingEvent || deletingEvents.includes(event.id)"
-              >
-                <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
-                <span v-else>🗑️</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- pastEvents -->
-      <div v-if="searchedEventsByType.past.length > 0" class="events-section">
-          <h3 class="search-category">
-            <span class="category-badge past">Past</span>
-            Events ({{ searchedEventsByType.past.length }})
-          </h3>
-          <div class="events-grid">
+          
+          <div v-else class="events-grid">
             <div 
-              v-for="pEvent in searchedEventsByType.past" 
+              v-for="event in events" 
+              :key="event.id" 
+              class="event-card"
+              :class="{ 'deleting': deletingEvents.includes(event.id),
+                        'selected': isEventSelected(event.id)
+              }"
+              :style="{
+                borderLeft: `5px solid ${getEventColor(event)}`,
+                borderRight: `5px solid ${getEventColor(event)}`
+              }"
+            >
+              <div class="event-header">
+                <input 
+                  type="checkbox" 
+                  :checked="isEventSelected(event.id)"
+                  @change="toggleEventSelection(event.id)"
+                  class="event-checkbox"
+                >
+                <h4 class="event-title">{{ event.summary || event.title }}</h4>
+              </div>
+              
+              <p v-if="event.description" class="event-description">
+                {{ event.description }}
+              </p>
+
+              <div class="event-location" v-if="event.location">
+                <strong>Location:</strong> {{ event.location }}
+              </div>
+
+              <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
+                  <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
+              </div>
+
+              <div class="event-times">
+                <div class="event-day">
+                  <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
+                </div>
+              </div>
+              <a 
+                v-if="event.html_link" 
+                :href="event.html_link" 
+                target="_blank" 
+                class="event-link"
+              >
+                View in Google Calendar
+              </a>
+              <div class="event-actions">
+                  <button 
+                    @click="openUpdateForm(event)" 
+                    class="btn-edit"> Edit
+                  </button>
+                  <button 
+                    @click="deleteEvent(event.id)" 
+                    class="btn-delete"
+                    :disabled="deletingEvent || deletingEvents.includes(event.id)"
+                    :title="'Delete ' + (event.title || 'event')"
+                  >
+                    <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                    <span v-else>🗑️</span>
+                  </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- pastEvents -->
+        <div class="events-section">
+          <h3>Past Events ({{ pastEvents.length }})</h3>
+          
+          <div v-if="loading && pastEvents.length === 0" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading your past calendar events...</p>
+          </div>
+          
+          <div v-else-if="pastEvents.length === 0" class="no-events">
+            <p>No past events found.</p>
+            <p v-if="!loading">Try creating your first event!</p>
+          </div>
+          
+          <div v-else class="events-grid">
+            <div 
+              v-for="pEvent in pastEvents" 
               :key="pEvent.id" 
               class="event-card"
-              :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+              :class="{ 'deleting': deletingEvents.includes(pEvent.id) ,
+                        'selected': isEventSelected(pEvent.id)
+              }"
               :style="{
                 borderLeft: `5px solid ${getEventColor(pEvent)}`,
                 borderRight: `5px solid ${getEventColor(pEvent)}`
               }"
             >
               <div class="event-header">
+                <input 
+                  type="checkbox" 
+                  :checked="isEventSelected(pEvent.id)"
+                  @change="toggleEventSelection(pEvent.id)"
+                  class="event-checkbox"
+                >
                 <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
               </div>
-
+              
               <p v-if="pEvent.description" class="event-description">
                 {{ pEvent.description }}
               </p>
@@ -625,7 +437,7 @@
               <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
                 <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
               </div>
-              
+
               <div class="event-times">
                 <div class="event-day">
                   <strong>Day:</strong> {{ formatDate(pEvent.start?.date_time || pEvent.start_time) }}
@@ -646,200 +458,576 @@
                 View in Google Calendar
               </a>
               <div class="event-actions">
-                <button @click="openUpdateForm(pEvent)" class="btn-edit">Edit</button>
+                <button 
+                  @click="openUpdateForm(pEvent)" 
+                  class="btn-edit"> Edit
+                </button>
                 <button 
                   @click="deleteEvent(pEvent.id)" 
                   class="btn-delete"
                   :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+                  :title="'Delete ' + (pEvent.title || 'event')"
                 >
-                  <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+                <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+                <span v-else>🗑️</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="search-results">
+        <!-- ongoingEvents searching-->
+        <div v-if="searchedEventsByType.ongoing.length > 0" class="events-section">
+          <h3 class="search-category">
+            <span class="category-badge ongoing">Ongoing</span>
+            Events ({{ searchedEventsByType.ongoing.length }})
+          </h3>
+          <div class="events-grid">
+            <div 
+              v-for="oEvent in searchedEventsByType.ongoing" 
+              :key="oEvent.id" 
+              class="event-card"
+              :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+              :style="{
+                borderLeft: `5px solid ${getEventColor(oEvent)}`,
+                borderRight: `5px solid ${getEventColor(oEvent)}`
+              }"
+            >
+              <div class="event-header">
+                <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
+              </div>
+
+              <p v-if="oEvent.description" class="event-description">
+                {{ oEvent.description }}
+              </p>
+
+              <div class="event-location" v-if="oEvent.location">
+                <strong>Location:</strong> {{ oEvent.location }}
+              </div>
+
+              <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
+                <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
+              </div>
+
+              <div class="event-times">
+                <div class="event-day">
+                  <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>End:</strong> {{ formatDateTime(oEvent.end?.date_time || oEvent.end_time ) }}
+                </div>
+              </div>
+              <a 
+                v-if="oEvent.html_link" 
+                :href="oEvent.html_link" 
+                target="_blank" 
+                class="event-link"
+              >
+                View in Google Calendar
+              </a>
+              <div class="event-actions">
+                <button @click="openUpdateForm(oEvent)" class="btn-edit">Edit</button>
+                <button 
+                  @click="deleteEvent(oEvent.id)" 
+                  class="btn-delete"
+                  :disabled="deletingEvent || deletingEvents.includes(oEvent.id)"
+                >
+                  <span v-if="deletingEvents.includes(oEvent.id)" class="delete-spinner"></span>
                   <span v-else>🗑️</span>
                 </button>
               </div>
             </div>
           </div>
-      </div>
-      
-      <div v-if="searchedEvents.length === 0" class="no-search-results">
-        <div class="no-events">
-          <h3>No events found</h3>
-          <p>No events match "{{ searchQuery }}"</p>
-          <p>Try searching with different keywords or <button @click="clearSearch" class="btn-link">clear your search</button></p>
         </div>
-      </div>
 
-    </div>
+        <!-- upcomingEvents -->
+        <div v-if="searchedEventsByType.upcoming.length > 0" class="events-section">
+          <h3 class="search-category">
+            <span class="category-badge upcoming">Upcoming</span>
+            Events ({{ searchedEventsByType.upcoming.length }})
+          </h3>
+          <div class="events-grid">
+            <div 
+              v-for="event in searchedEventsByType.upcoming" 
+              :key="event.id" 
+              class="event-card"
+              :class="{ 'deleting': deletingEvents.includes(event.id) }"
+              :style="{
+                borderLeft: `5px solid ${getEventColor(event)}`,
+                borderRight: `5px solid ${getEventColor(event)}`
+              }"
+            >
+              <div class="event-header">
+                <h4 class="event-title">{{ event.summary || event.title }}</h4>
+              </div>
+              <p v-if="event.description" class="event-description">
+                {{ event.description }}
+              </p>
 
-    <div v-if="showUpdateForm" class="event-form-overlay">
-      <div class="event-form">
-        <h3>Update Event</h3>
-        <div v-if="error" class="error-message">
-          {{ error }}
-          <button @click="clearError" class="btn-close">×</button>
-        </div>
-        <form @submit.prevent="updateEvent">
-          <div class="form-group">
-            <label>Title:</label>
-            <input 
-              v-model="updateEventData.title" 
-              type="text" 
-              required 
-              class="form-input"
-              placeholder="Meeting with team"
-            >
-          </div>
-          <div class="form-group">
-            <label>Description:</label>
-            <textarea 
-              v-model="updateEventData.description" 
-              class="form-textarea"
-              placeholder="Add details about your event..."
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Location:</label>
-            <input 
-              v-model="updateEventData.location" 
-              type="text" 
-              class="form-input"
-              placeholder="Office, Zoom, Restaurant..."
-            >
-          </div>
-          <div class="form-group">
-            <label>Attendees (emails, comma-separated):</label>
-            <input 
-              v-model="updateEventData.attendees" 
-              type="text" 
-              class="form-input"
-              placeholder="alice@example.com, bob@example.com"
-            >
-          </div>
-          <div class="form-group">
-            <label>Event Color:</label>
-            <div class="color-picker">
-              <div 
-                v-for="color in eventColors" 
-                :key="color.id"
-                class="color-option"
-                :class="{ active: updateEventData.colorId === color.id }"
-                :style="{ backgroundColor: color.hex }"
-                @click="updateEventData.colorId = color.id"
-                :title="color.name"
+              <div class="event-location" v-if="event.location">
+                <strong>Location:</strong> {{ event.location }}
+              </div>
+
+              <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
+                <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
+              </div>
+
+              <div class="event-times">
+                <div class="event-day">
+                  <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
+                </div>
+                <div class="event-time">
+                  <strong>End:</strong> {{ formatDateTime(event.end?.date_time || event.end_time ) }}
+                </div>
+              </div>
+              <a 
+                v-if="event.html_link" 
+                :href="event.html_link" 
+                target="_blank" 
+                class="event-link"
               >
-                <span v-if="updateEventData.colorId === color.id">✓</span>
+                View in Google Calendar
+              </a>
+              <div class="event-actions">
+                <button @click="openUpdateForm(event)" class="btn-edit">Edit</button>
+                <button 
+                  @click="deleteEvent(event.id)" 
+                  class="btn-delete"
+                  :disabled="deletingEvent || deletingEvents.includes(event.id)"
+                >
+                  <span v-if="deletingEvents.includes(event.id)" class="delete-spinner"></span>
+                  <span v-else>🗑️</span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label>Start Time:</label>
-            <input 
-              v-model="updateEventData.start_time" 
-              type="datetime-local" 
-              required 
-              class="form-input"
-            >
+        <!-- pastEvents -->
+        <div v-if="searchedEventsByType.past.length > 0" class="events-section">
+            <h3 class="search-category">
+              <span class="category-badge past">Past</span>
+              Events ({{ searchedEventsByType.past.length }})
+            </h3>
+            <div class="events-grid">
+              <div 
+                v-for="pEvent in searchedEventsByType.past" 
+                :key="pEvent.id" 
+                class="event-card"
+                :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+                :style="{
+                  borderLeft: `5px solid ${getEventColor(pEvent)}`,
+                  borderRight: `5px solid ${getEventColor(pEvent)}`
+                }"
+              >
+                <div class="event-header">
+                  <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
+                </div>
+
+                <p v-if="pEvent.description" class="event-description">
+                  {{ pEvent.description }}
+                </p>
+
+                <div class="event-location" v-if="pEvent.location">
+                  <strong>Location:</strong> {{ pEvent.location }}
+                </div>
+
+                <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
+                  <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
+                </div>
+
+                <div class="event-times">
+                  <div class="event-day">
+                    <strong>Day:</strong> {{ formatDate(pEvent.start?.date_time || pEvent.start_time) }}
+                  </div>
+                  <div class="event-time">
+                    <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
+                  </div>
+                  <div class="event-time">
+                    <strong>End:</strong> {{ formatDateTime(pEvent.end?.date_time || pEvent.end_time ) }}
+                  </div>
+                </div>
+                <a 
+                  v-if="pEvent.html_link" 
+                  :href="pEvent.html_link" 
+                  target="_blank" 
+                  class="event-link"
+                >
+                  View in Google Calendar
+                </a>
+                <div class="event-actions">
+                  <button @click="openUpdateForm(pEvent)" class="btn-edit">Edit</button>
+                  <button 
+                    @click="deleteEvent(pEvent.id)" 
+                    class="btn-delete"
+                    :disabled="deletingEvent || deletingEvents.includes(pEvent.id)"
+                  >
+                    <span v-if="deletingEvents.includes(pEvent.id)" class="delete-spinner"></span>
+                    <span v-else>🗑️</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+        </div>
+        
+        <div v-if="searchedEvents.length === 0" class="no-search-results">
+          <div class="no-events">
+            <h3>No events found</h3>
+            <p>No events match "{{ searchQuery }}"</p>
+            <p>Try searching with different keywords or <button @click="clearSearch" class="btn-link">clear your search</button></p>
           </div>
-          <div class="form-group">
-            <label>End Time:</label>
-            <input 
-              v-model="updateEventData.end_time" 
-              type="datetime-local" 
-              required 
-              class="form-input"
-            >
+        </div>
+
+      </div>
+
+      <div v-if="showUpdateForm" class="event-form-overlay">
+        <div class="event-form">
+          <h3>Update Event</h3>
+          <div v-if="error" class="error-message">
+            {{ error }}
+            <button @click="clearError" class="btn-close">×</button>
           </div>
-          <div class="form-actions">
+          <form @submit.prevent="updateEvent">
+            <div class="form-group">
+              <label>Title:</label>
+              <input 
+                v-model="updateEventData.title" 
+                type="text" 
+                required 
+                class="form-input"
+                placeholder="Meeting with team"
+              >
+            </div>
+            <div class="form-group">
+              <label>Description:</label>
+              <textarea 
+                v-model="updateEventData.description" 
+                class="form-textarea"
+                placeholder="Add details about your event..."
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Location:</label>
+              <input 
+                v-model="updateEventData.location" 
+                type="text" 
+                class="form-input"
+                placeholder="Office, Zoom, Restaurant..."
+              >
+            </div>
+            <div class="form-group">
+              <label>Attendees (emails, comma-separated):</label>
+              <input 
+                v-model="updateEventData.attendees" 
+                type="text" 
+                class="form-input"
+                placeholder="alice@example.com, bob@example.com"
+              >
+            </div>
+            <div class="form-group">
+              <label>Event Color:</label>
+              <div class="color-picker">
+                <div 
+                  v-for="color in eventColors" 
+                  :key="color.id"
+                  class="color-option"
+                  :class="{ active: updateEventData.colorId === color.id }"
+                  :style="{ backgroundColor: color.hex }"
+                  @click="updateEventData.colorId = color.id"
+                  :title="color.name"
+                >
+                  <span v-if="updateEventData.colorId === color.id">✓</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Start Time:</label>
+              <input 
+                v-model="updateEventData.start_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-group">
+              <label>End Time:</label>
+              <input 
+                v-model="updateEventData.end_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn btn-primary" 
+                :disabled="updatingEvent"
+              >
+                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+              </button>
+              <button 
+                type="button" 
+                @click="cancelUpdate" 
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div v-if="showDeleteConfirm" class="modal-overlay">
+        <div class="modal">
+          <h3>Delete Event</h3>
+          <p>Are you sure you want to delete "<strong>{{ eventToDelete?.title || eventToDelete?.summary }}</strong>"?</p>
+          <div class="modal-actions">
             <button 
-              type="submit" 
-              class="btn btn-primary" 
-              :disabled="updatingEvent"
+              @click="confirmDelete" 
+              class="btn btn-danger"
+              :disabled="deletingEvent"
             >
-              {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+              {{ deletingEvent ? 'Deleting...' : 'Yes, Delete' }}
             </button>
             <button 
-              type="button" 
-              @click="cancelUpdate" 
+              @click="cancelDelete" 
               class="btn btn-secondary"
+              :disabled="deletingEvent"
             >
               Cancel
             </button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
 
-    <div v-if="showDeleteConfirm" class="modal-overlay">
-      <div class="modal">
-        <h3>Delete Event</h3>
-        <p>Are you sure you want to delete "<strong>{{ eventToDelete?.title || eventToDelete?.summary }}</strong>"?</p>
-        <div class="modal-actions">
-          <button 
-            @click="confirmDelete" 
-            class="btn btn-danger"
-            :disabled="deletingEvent"
-          >
-            {{ deletingEvent ? 'Deleting...' : 'Yes, Delete' }}
-          </button>
-          <button 
-            @click="cancelDelete" 
-            class="btn btn-secondary"
-            :disabled="deletingEvent"
-          >
-            Cancel
-          </button>
+      <div v-if="showDeleteAllConfirm" class="modal-overlay">
+        <div class="modal">
+          <h3>Delete All Events</h3>
+          <p>⚠️ Are you sure you want to delete <strong>all {{ totalEventsCount }} events</strong> from your calendar?</p>
+          <p class="text-muted">This will remove all ongoing, upcoming, and past events.</p>
+          <div class="modal-actions">
+            <button 
+              @click="confirmDeleteAll" 
+              class="btn btn-danger"
+              :disabled="deletingAllEvents"
+            >
+              {{ deletingAllEvents ? 'Deleting...' : `Yes, Delete All ${totalEventsCount} Events` }}
+            </button>
+            <button 
+              @click="cancelDeleteAll" 
+              class="btn btn-secondary"
+              :disabled="deletingAllEvents"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="showDeleteSelectedConfirm" class="modal-overlay">
+        <div class="modal">
+          <h3>Delete Selected Events</h3>
+          <p>Are you sure you want to delete <strong>{{ selectedEvents.size }} selected events</strong>?</p>
+          <div class="modal-actions">
+            <button 
+              @click="confirmDeleteSelected" 
+              class="btn btn-danger"
+              :disabled="deletingSelectedEvents"
+            >
+              {{ deletingSelectedEvents ? 'Deleting...' : `Yes, Delete ${selectedEvents.size} Events` }}
+            </button>
+            <button 
+              @click="cancelDeleteSelected" 
+              class="btn btn-secondary"
+              :disabled="deletingSelectedEvents"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
-
-    <div v-if="showDeleteAllConfirm" class="modal-overlay">
-      <div class="modal">
-        <h3>Delete All Events</h3>
-        <p>⚠️ Are you sure you want to delete <strong>all {{ totalEventsCount }} events</strong> from your calendar?</p>
-        <p class="text-muted">This will remove all ongoing, upcoming, and past events.</p>
-        <div class="modal-actions">
-          <button 
-            @click="confirmDeleteAll" 
-            class="btn btn-danger"
-            :disabled="deletingAllEvents"
-          >
-            {{ deletingAllEvents ? 'Deleting...' : `Yes, Delete All ${totalEventsCount} Events` }}
-          </button>
-          <button 
-            @click="cancelDeleteAll" 
-            class="btn btn-secondary"
-            :disabled="deletingAllEvents"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteSelectedConfirm" class="modal-overlay">
-      <div class="modal">
-        <h3>Delete Selected Events</h3>
-        <p>Are you sure you want to delete <strong>{{ selectedEvents.size }} selected events</strong>?</p>
-        <div class="modal-actions">
-          <button 
-            @click="confirmDeleteSelected" 
-            class="btn btn-danger"
-            :disabled="deletingSelectedEvents"
-          >
-            {{ deletingSelectedEvents ? 'Deleting...' : `Yes, Delete ${selectedEvents.size} Events` }}
-          </button>
-          <button 
-            @click="cancelDeleteSelected" 
-            class="btn btn-secondary"
-            :disabled="deletingSelectedEvents"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-
   </div>
+
+  <div class="calendar-container">
+    <div v-if="currentView === 'calendar'" class="calendar-view">
+      <div class="calender-header">
+        <div class="calender-actions">
+            <div class="view-toggle">
+              <button 
+                @click="currentView = 'list'" 
+                :class="{ active: currentView === 'list' }"
+                class="btn btn-outline"
+              >
+                📋 List
+              </button>
+              <button 
+                @click="currentView = 'calendar'" 
+                :class="{ active: currentView === 'calendar' }"
+                class="btn btn-outline"
+              >
+                📅 Calendar
+              </button>
+            </div>
+        </div>
+      </div>
+
+      <div class="month-navigation">
+          <button @click="previousMonth" class="btn btn-outline">←</button>
+          <h2>{{ formatMonth(currentMonth) }}</h2>
+          <button @click="nextMonth" class="btn btn-outline">→</button>
+      </div>
+      
+      <div class="calendar-grid">
+        <div class="calendar-weekdays">
+          <div v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" 
+              :key="day" class="weekday-header">
+            {{ day }}
+          </div>
+        </div>
+
+        <div class="calendar-days">
+          <div 
+            v-for="day in calendarDays" 
+            :key="day.date.toString()"
+            :class="{
+              'calendar-day': true,
+              'other-month': !day.isCurrentMonth,
+              'today': day.isToday
+            }"
+          >
+            <div class="day-number">{{ day.date.getDate() }}</div>
+            <div class="day-events">
+              <div 
+                v-for="event in day.events" 
+                :key="event.id"
+                class="calendar-event"
+                :style="{ backgroundColor: getEventColor(event) }"
+                @click="openUpdateForm(event)"
+                :title="event.summary || event.title"
+              >
+                <div class="event-time">
+                  {{ formatDateTime(event.start?.date_time || event.start_time) }}
+                </div>
+                <div class="event-title">
+                  {{ event.summary || event.title }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="showUpdateForm" class="event-form-overlay">
+        <div class="event-form">
+          <h3>Update Event</h3>
+          <div v-if="error" class="error-message">
+            {{ error }}
+            <button @click="clearError" class="btn-close">×</button>
+          </div>
+          <form @submit.prevent="updateEvent">
+            <div class="form-group">
+              <label>Title:</label>
+              <input 
+                v-model="updateEventData.title" 
+                type="text" 
+                required 
+                class="form-input"
+                placeholder="Meeting with team"
+              >
+            </div>
+            <div class="form-group">
+              <label>Description:</label>
+              <textarea 
+                v-model="updateEventData.description" 
+                class="form-textarea"
+                placeholder="Add details about your event..."
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Location:</label>
+              <input 
+                v-model="updateEventData.location" 
+                type="text" 
+                class="form-input"
+                placeholder="Office, Zoom, Restaurant..."
+              >
+            </div>
+            <div class="form-group">
+              <label>Attendees (emails, comma-separated):</label>
+              <input 
+                v-model="updateEventData.attendees" 
+                type="text" 
+                class="form-input"
+                placeholder="alice@example.com, bob@example.com"
+              >
+            </div>
+            <div class="form-group">
+              <label>Event Color:</label>
+              <div class="color-picker">
+                <div 
+                  v-for="color in eventColors" 
+                  :key="color.id"
+                  class="color-option"
+                  :class="{ active: updateEventData.colorId === color.id }"
+                  :style="{ backgroundColor: color.hex }"
+                  @click="updateEventData.colorId = color.id"
+                  :title="color.name"
+                >
+                  <span v-if="updateEventData.colorId === color.id">✓</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Start Time:</label>
+              <input 
+                v-model="updateEventData.start_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-group">
+              <label>End Time:</label>
+              <input 
+                v-model="updateEventData.end_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn btn-primary" 
+                :disabled="updatingEvent"
+              >
+                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+              </button>
+              <button 
+                type="button" 
+                @click="cancelUpdate" 
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
@@ -860,6 +1048,8 @@ const deletingAllEvents = ref(false);
 const deletingSelectedEvents = ref(false); 
 const deletingEvents = ref([]); 
 const searchQuery = ref('');
+const currentView = ref('list'); 
+const currentMonth = ref(new Date());
 const selectedEvents = ref(new Set());
 
 const eventColors = ref([
@@ -1226,6 +1416,72 @@ function getEventColor(event) {
 function clearSearch() {
   searchQuery.value = '';
 }
+
+//calendar-view 
+
+function previousMonth() {
+  currentMonth.value = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth() - 1,
+    1
+  );
+}
+
+function nextMonth() {
+  currentMonth.value = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth() + 1,
+    1
+  );
+}
+
+function formatMonth(date) {
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long' 
+  });
+}
+
+const calendarDays = computed(() => {
+  const year = currentMonth.value.getFullYear();
+  const month = currentMonth.value.getMonth();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  const startDate = new Date(firstDay);
+  startDate.setDate(firstDay.getDate() - firstDay.getDay());
+  
+  const endDate = new Date(lastDay);
+  endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+  
+  const days = [];
+  const currentDate = new Date(startDate);
+  const today = new Date();
+  
+  while (currentDate <= endDate) {
+    const date = new Date(currentDate);
+    const isCurrentMonth = date.getMonth() === month;
+    const isToday = date.toDateString() === today.toDateString();
+    
+    const dayEvents = allEvents.value.filter(event => {
+      const eventDate = new Date(event.start?.date_time || event.start_time);
+      return eventDate.toDateString() === date.toDateString();
+    });
+    
+    days.push({
+      date,
+      isCurrentMonth,
+      isToday,
+      events: dayEvents
+    });
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return days;
+});
+
 </script>
 
 <style scoped>
@@ -1347,7 +1603,7 @@ function clearSearch() {
 .event-title {
   margin: 0;
   color: #333;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   flex: 1;
   margin-right: 10px;
@@ -1398,7 +1654,7 @@ function clearSearch() {
 
 .event-time ,
 .event-day{
-  color: #666;
+  color: black;
   font-size: 14px;
   margin-bottom: 5px;
 }
@@ -1656,6 +1912,131 @@ function clearSearch() {
 .event-header {
   display: flex;
   align-items: center;
+}
+
+/* calendar */
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 5px;
+  margin-left: 15px;
+}
+
+.view-toggle .btn.active {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Calendar View */
+.calendar-view {
+  margin-top: 20px;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.month-navigation h2 {
+  margin: 0;
+  min-width: 200px;
+  text-align: center;
+}
+
+.calendar-grid {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.weekday-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #495057;
+  border-right: 1px solid #dee2e6;
+}
+
+.weekday-header:last-child {
+  border-right: none;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  min-width: 125px;
+  min-height: 120px;
+  border-right: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  padding: 5px;
+  background: white;
+}
+
+.calendar-day.other-month {
+  background-color: #757575;
+  opacity: 0.8;
+  color: #010101;
+}
+
+.calendar-day.today {
+  background-color: #9ccbed;
+  
+}
+
+.calendar-day:nth-child(7n) {
+  border-right: none;
+}
+
+.day-number {
+  color: #555;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.day-events {
+  min-height: 80px;
+}
+
+.calendar-event {
+  background: #007bff;
+  color: white;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.event-time {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+.event-title {
+  font-weight: 500;
 }
 
 </style>
