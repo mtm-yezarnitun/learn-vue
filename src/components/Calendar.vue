@@ -1,5 +1,104 @@
 <template>
   <div class="calendar-container">
+    <div v-if="showUpdateForm" class="event-form-overlay">
+        <div class="event-form">
+          <h3>Update Event</h3>
+          <div v-if="error" class="error-message">
+            {{ error }}
+            <button @click="clearError" class="btn-close">×</button>
+          </div>
+          <form @submit.prevent="updateEvent">
+            <div class="form-group">
+              <label>Title:</label>
+              <input 
+                v-model="updateEventData.title" 
+                type="text" 
+                required 
+                class="form-input"
+                placeholder="Meeting with team"
+              >
+            </div>
+            <div class="form-group">
+              <label>Description:</label>
+              <textarea 
+                v-model="updateEventData.description" 
+                class="form-textarea"
+                placeholder="Add details about your event..."
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Location:</label>
+              <input 
+                v-model="updateEventData.location" 
+                type="text" 
+                class="form-input"
+                placeholder="Office, Zoom, Restaurant..."
+              >
+            </div>
+            <div class="form-group">
+              <label>Attendees (emails, comma-separated):</label>
+              <input 
+                v-model="updateEventData.attendees" 
+                type="text" 
+                class="form-input"
+                placeholder="alice@example.com, bob@example.com"
+              >
+            </div>
+            <div class="form-group">
+              <label>Event Color:</label>
+              <div class="color-picker">
+                <div 
+                  v-for="color in eventColors" 
+                  :key="color.id"
+                  class="color-option"
+                  :class="{ active: updateEventData.colorId === color.id }"
+                  :style="{ backgroundColor: color.hex }"
+                  @click="updateEventData.colorId = color.id"
+                  :title="color.name"
+                >
+                  <span v-if="updateEventData.colorId === color.id">✓</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Start Time:</label>
+              <input 
+                v-model="updateEventData.start_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-group">
+              <label>End Time:</label>
+              <input 
+                v-model="updateEventData.end_time" 
+                type="datetime-local" 
+                required 
+                class="form-input"
+              >
+            </div>
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn btn-primary" 
+                :disabled="updatingEvent"
+              >
+                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
+              </button>
+              <button 
+                type="button" 
+                @click="cancelUpdate" 
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+    </div>
+
     <div v-if="currentView === 'list'">
       <div class="calendar-header">
         <div class="calendar-actions">
@@ -217,7 +316,10 @@
       <div v-if="!isSearching">
         <!-- ongoingEvents -->
         <div class="events-section" >
-          <h3>Ongoing Events ({{ ongoingEvents.length }})</h3>
+          <h3 class="section-header">
+            Ongoing Events
+            <span class="event-count-badge">{{ ongoingEvents.length }}</span>
+          </h3>
           
           <div v-if="loading && ongoingEvents.length === 0" class="loading-state">
             <div class="spinner"></div>
@@ -304,7 +406,10 @@
 
         <!-- upcomingEvents -->
         <div class="events-section">
-          <h3>Upcoming Events ({{ events.length }})</h3>
+          <h3 class="section-header">
+            Upcoming Events
+            <span class="event-count-badge">{{ events.length }}</span>
+          </h3>
           
           <div v-if="loading && events.length === 0" class="loading-state">
             <div class="spinner"></div>
@@ -312,7 +417,7 @@
           </div>
           
           <div v-else-if="events.length === 0" class="no-events">
-            <p>No upcoming events found.</p>
+            <p>No Upcoming events found.</p>
             <p v-if="!loading">Try creating your first event!</p>
           </div>
           
@@ -391,7 +496,10 @@
 
         <!-- pastEvents -->
         <div class="events-section">
-          <h3>Past Events ({{ pastEvents.length }})</h3>
+          <h3 class="section-header">
+            Past Events
+            <span class="event-count-badge">{{ pastEvents.length }}</span>
+          </h3>
           
           <div v-if="loading && pastEvents.length === 0" class="loading-state">
             <div class="spinner"></div>
@@ -399,7 +507,7 @@
           </div>
           
           <div v-else-if="pastEvents.length === 0" class="no-events">
-            <p>No past events found.</p>
+            <p>No Past events found.</p>
             <p v-if="!loading">Try creating your first event!</p>
           </div>
           
@@ -480,9 +588,9 @@
       <div v-else class="search-results">
         <!-- ongoingEvents searching-->
         <div v-if="searchedEventsByType.ongoing.length > 0" class="events-section">
-          <h3 class="search-category">
-            <span class="category-badge ongoing">Ongoing</span>
-            Events ({{ searchedEventsByType.ongoing.length }})
+          <h3 class="section-header">
+            Ongoing Events
+            <span class="event-count-badge">{{ searchedEventsByType.ongoing.length }}</span>
           </h3>
           <div class="events-grid">
             <div 
@@ -547,9 +655,9 @@
 
         <!-- upcomingEvents -->
         <div v-if="searchedEventsByType.upcoming.length > 0" class="events-section">
-          <h3 class="search-category">
-            <span class="category-badge upcoming">Upcoming</span>
-            Events ({{ searchedEventsByType.upcoming.length }})
+          <h3 class="section-header">
+            Upcoming Events
+            <span class="event-count-badge">{{ searchedEventsByType.upcoming.length }}</span>
           </h3>
           <div class="events-grid">
             <div 
@@ -613,9 +721,9 @@
 
         <!-- pastEvents -->
         <div v-if="searchedEventsByType.past.length > 0" class="events-section">
-            <h3 class="search-category">
-              <span class="category-badge past">Past</span>
-              Events ({{ searchedEventsByType.past.length }})
+            <h3 class="section-header">
+              Past Events
+              <span class="event-count-badge">{{ searchedEventsByType.past.length }}</span>
             </h3>
             <div class="events-grid">
               <div 
@@ -686,105 +794,6 @@
           </div>
         </div>
 
-      </div>
-
-      <div v-if="showUpdateForm" class="event-form-overlay">
-        <div class="event-form">
-          <h3>Update Event</h3>
-          <div v-if="error" class="error-message">
-            {{ error }}
-            <button @click="clearError" class="btn-close">×</button>
-          </div>
-          <form @submit.prevent="updateEvent">
-            <div class="form-group">
-              <label>Title:</label>
-              <input 
-                v-model="updateEventData.title" 
-                type="text" 
-                required 
-                class="form-input"
-                placeholder="Meeting with team"
-              >
-            </div>
-            <div class="form-group">
-              <label>Description:</label>
-              <textarea 
-                v-model="updateEventData.description" 
-                class="form-textarea"
-                placeholder="Add details about your event..."
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <label>Location:</label>
-              <input 
-                v-model="updateEventData.location" 
-                type="text" 
-                class="form-input"
-                placeholder="Office, Zoom, Restaurant..."
-              >
-            </div>
-            <div class="form-group">
-              <label>Attendees (emails, comma-separated):</label>
-              <input 
-                v-model="updateEventData.attendees" 
-                type="text" 
-                class="form-input"
-                placeholder="alice@example.com, bob@example.com"
-              >
-            </div>
-            <div class="form-group">
-              <label>Event Color:</label>
-              <div class="color-picker">
-                <div 
-                  v-for="color in eventColors" 
-                  :key="color.id"
-                  class="color-option"
-                  :class="{ active: updateEventData.colorId === color.id }"
-                  :style="{ backgroundColor: color.hex }"
-                  @click="updateEventData.colorId = color.id"
-                  :title="color.name"
-                >
-                  <span v-if="updateEventData.colorId === color.id">✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Start Time:</label>
-              <input 
-                v-model="updateEventData.start_time" 
-                type="datetime-local" 
-                required 
-                class="form-input"
-              >
-            </div>
-            <div class="form-group">
-              <label>End Time:</label>
-              <input 
-                v-model="updateEventData.end_time" 
-                type="datetime-local" 
-                required 
-                class="form-input"
-              >
-            </div>
-            <div class="form-actions">
-              <button 
-                type="submit" 
-                class="btn btn-primary" 
-                :disabled="updatingEvent"
-              >
-                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
-              </button>
-              <button 
-                type="button" 
-                @click="cancelUpdate" 
-                class="btn btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
       </div>
 
       <div v-if="showDeleteConfirm" class="modal-overlay">
@@ -928,104 +937,6 @@
         </div>
       </div>
     </div>
-    <div v-if="showUpdateForm" class="event-form-overlay">
-        <div class="event-form">
-          <h3>Update Event</h3>
-          <div v-if="error" class="error-message">
-            {{ error }}
-            <button @click="clearError" class="btn-close">×</button>
-          </div>
-          <form @submit.prevent="updateEvent">
-            <div class="form-group">
-              <label>Title:</label>
-              <input 
-                v-model="updateEventData.title" 
-                type="text" 
-                required 
-                class="form-input"
-                placeholder="Meeting with team"
-              >
-            </div>
-            <div class="form-group">
-              <label>Description:</label>
-              <textarea 
-                v-model="updateEventData.description" 
-                class="form-textarea"
-                placeholder="Add details about your event..."
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <label>Location:</label>
-              <input 
-                v-model="updateEventData.location" 
-                type="text" 
-                class="form-input"
-                placeholder="Office, Zoom, Restaurant..."
-              >
-            </div>
-            <div class="form-group">
-              <label>Attendees (emails, comma-separated):</label>
-              <input 
-                v-model="updateEventData.attendees" 
-                type="text" 
-                class="form-input"
-                placeholder="alice@example.com, bob@example.com"
-              >
-            </div>
-            <div class="form-group">
-              <label>Event Color:</label>
-              <div class="color-picker">
-                <div 
-                  v-for="color in eventColors" 
-                  :key="color.id"
-                  class="color-option"
-                  :class="{ active: updateEventData.colorId === color.id }"
-                  :style="{ backgroundColor: color.hex }"
-                  @click="updateEventData.colorId = color.id"
-                  :title="color.name"
-                >
-                  <span v-if="updateEventData.colorId === color.id">✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Start Time:</label>
-              <input 
-                v-model="updateEventData.start_time" 
-                type="datetime-local" 
-                required 
-                class="form-input"
-              >
-            </div>
-            <div class="form-group">
-              <label>End Time:</label>
-              <input 
-                v-model="updateEventData.end_time" 
-                type="datetime-local" 
-                required 
-                class="form-input"
-              >
-            </div>
-            <div class="form-actions">
-              <button 
-                type="submit" 
-                class="btn btn-primary" 
-                :disabled="updatingEvent"
-              >
-                {{ updatingEvent ? 'Updating...' : 'Update Event' }}
-              </button>
-              <button 
-                type="button" 
-                @click="cancelUpdate" 
-                class="btn btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-    </div>
   </div>
 
 </template>
@@ -1147,6 +1058,17 @@ onMounted(() => {
     return;
   }
   fetchEvents();
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (showEventForm.value) cancelCreate();
+      if (showUpdateForm.value) cancelUpdate();
+      if (showDeleteConfirm.value) cancelDelete();
+      if (showDeleteAllConfirm.value) cancelDeleteAll();
+      if (showDeleteSelectedConfirm.value) cancelDeleteSelected();
+    }
+  });
+
 });
 
 async function fetchEvents() {
@@ -1936,7 +1858,6 @@ const calendarDays = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
   margin-bottom: 20px;
 }
 
@@ -2037,6 +1958,22 @@ const calendarDays = computed(() => {
 
 .event-title {
   font-weight: 500;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.event-count-badge {
+  background: #2e8b47;
+  color: white;
+  padding: 10px 10px;
+  border-radius: 20%;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 </style>
