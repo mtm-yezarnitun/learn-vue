@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>⌘ Calendar</h1>
+    <h1> ⋒ Calendar</h1>
     <Calendar />
   </div>
 </template>

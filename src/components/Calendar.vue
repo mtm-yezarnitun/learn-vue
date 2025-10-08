@@ -1,6 +1,5 @@
 <template>
   <div class="calendar-container">
-
     <div class="calendar-header">
       <div class="calendar-actions">
         <button 
@@ -8,10 +7,11 @@
           class="btn btn-primary" 
           :disabled="loading"
         >
-          {{ loading ? 'Loading...' : 'Refresh Events' }}
+          {{ loading ? 'Loading...' : 'Refresh' }}
         </button>
+
         <button @click="showEventForm = true" class="btn btn-success">
-          + New Event
+          Add Event
         </button>
 
         <button 
@@ -22,10 +22,53 @@
           title="Delete all events from your calendar"
         >
           🗑️ Delete All Events
-        </button>
+        </button> 
 
       </div>
-      
+    </div>
+
+    <div class="calendar-header">
+      <div class="calendar-actions">
+        <div v-if="selectedEvents.size > 0" class="selection-actions-bar">
+          <div class="selection-info">
+            <strong>{{ selectedEvents.size }}</strong> event(s) selected
+          </div>
+          <div class="selection-buttons">
+            <button 
+              @click="deleteSelectedEvents" 
+              class="btn btn-danger btn-sm"
+              :disabled="deletingSelectedEvents"
+            >
+              Delete Selected
+            </button>
+            <button 
+              @click="selectAllEvents" 
+              class="btn btn-outline-primary btn-sm"
+            >
+              Select All
+            </button>
+            <button 
+              @click="clearSelection" 
+              class="btn btn-outline-secondary btn-sm"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="totalEventsCount > 0" class="bulk-selection-options">
+          <button 
+            @click="selectAllEvents" 
+            class="btn btn-outline-primary btn-sm btn-sl"
+          >
+            Select Events
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="calendar-header">
       <div class="search-container">
         <div class="search-input-wrapper">
           <input 
@@ -173,26 +216,40 @@
             v-for="oEvent in ongoingEvents" 
             :key="oEvent.id" 
             class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(oEvent.id) }"
+            :class="{ 'deleting': deletingEvents.includes(oEvent.id),
+                      'selected': isEventSelected(oEvent.id)
+            }"
             :style="{
               borderLeft: `5px solid ${getEventColor(oEvent)}`,
               borderRight: `5px solid ${getEventColor(oEvent)}`
             }"
           >
             <div class="event-header">
+              <input 
+                type="checkbox" 
+                :checked="isEventSelected(oEvent.id)"
+                @change="toggleEventSelection(oEvent.id)"
+                class="event-checkbox"
+              >
               <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
             </div>
             
             <p v-if="oEvent.description" class="event-description">
               {{ oEvent.description }}
             </p>
+
             <div class="event-location" v-if="oEvent.location">
               <strong>Location:</strong> {{ oEvent.location }}
             </div>
+
             <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
             </div>
+
             <div class="event-times">
+              <div class="event-day">
+                <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
+              </div>
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
               </div>
@@ -246,26 +303,40 @@
             v-for="event in events" 
             :key="event.id" 
             class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(event.id) }"
+            :class="{ 'deleting': deletingEvents.includes(event.id),
+                      'selected': isEventSelected(event.id)
+             }"
             :style="{
               borderLeft: `5px solid ${getEventColor(event)}`,
               borderRight: `5px solid ${getEventColor(event)}`
             }"
           >
             <div class="event-header">
+              <input 
+                type="checkbox" 
+                :checked="isEventSelected(event.id)"
+                @change="toggleEventSelection(event.id)"
+                class="event-checkbox"
+              >
               <h4 class="event-title">{{ event.summary || event.title }}</h4>
             </div>
             
             <p v-if="event.description" class="event-description">
               {{ event.description }}
             </p>
+
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
             </div>
-          <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
-              <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
-          </div>
+
+            <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
+                <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
+            </div>
+
             <div class="event-times">
+              <div class="event-day">
+                <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
+              </div>
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
               </div>
@@ -319,26 +390,40 @@
             v-for="pEvent in pastEvents" 
             :key="pEvent.id" 
             class="event-card"
-            :class="{ 'deleting': deletingEvents.includes(pEvent.id) }"
+            :class="{ 'deleting': deletingEvents.includes(pEvent.id) ,
+                      'selected': isEventSelected(pEvent.id)
+            }"
             :style="{
               borderLeft: `5px solid ${getEventColor(pEvent)}`,
               borderRight: `5px solid ${getEventColor(pEvent)}`
             }"
           >
             <div class="event-header">
+              <input 
+                type="checkbox" 
+                :checked="isEventSelected(pEvent.id)"
+                @change="toggleEventSelection(pEvent.id)"
+                class="event-checkbox"
+              >
               <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
             </div>
             
             <p v-if="pEvent.description" class="event-description">
               {{ pEvent.description }}
             </p>
+
             <div class="event-location" v-if="pEvent.location">
               <strong>Location:</strong> {{ pEvent.location }}
             </div>
+
             <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
             </div>
+
             <div class="event-times">
+              <div class="event-day">
+                <strong>Day:</strong> {{ formatDate(pEvent.start?.date_time || pEvent.start_time) }}
+              </div>
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
               </div>
@@ -395,16 +480,23 @@
             <div class="event-header">
               <h4 class="event-title">{{ oEvent.summary || oEvent.title }}</h4>
             </div>
+
             <p v-if="oEvent.description" class="event-description">
               {{ oEvent.description }}
             </p>
+
             <div class="event-location" v-if="oEvent.location">
               <strong>Location:</strong> {{ oEvent.location }}
             </div>
+
             <div v-if="oEvent.attendees && oEvent.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ oEvent.attendees.join(', ') }}
             </div>
+
             <div class="event-times">
+              <div class="event-day">
+                <strong>Day:</strong> {{ formatDate(oEvent.start?.date_time || oEvent.start_time) }}
+              </div>
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(oEvent.start?.date_time || oEvent.start_time) }}
               </div>
@@ -458,13 +550,19 @@
             <p v-if="event.description" class="event-description">
               {{ event.description }}
             </p>
+
             <div class="event-location" v-if="event.location">
               <strong>Location:</strong> {{ event.location }}
             </div>
+
             <div v-if="event.attendees && event.attendees.length > 0" class="event-location">
               <strong>Attendees:</strong> {{ event.attendees.join(', ') }}
             </div>
+
             <div class="event-times">
+              <div class="event-day">
+                <strong>Day:</strong> {{ formatDate(event.start?.date_time || event.start_time) }}
+              </div>
               <div class="event-time">
                 <strong>Start:</strong> {{ formatDateTime(event.start?.date_time || event.start_time) }}
               </div>
@@ -512,20 +610,26 @@
                 borderRight: `5px solid ${getEventColor(pEvent)}`
               }"
             >
-              <!-- Your existing event card content -->
               <div class="event-header">
                 <h4 class="event-title">{{ pEvent.summary || pEvent.title }}</h4>
               </div>
+
               <p v-if="pEvent.description" class="event-description">
                 {{ pEvent.description }}
               </p>
+
               <div class="event-location" v-if="pEvent.location">
                 <strong>Location:</strong> {{ pEvent.location }}
               </div>
+
               <div v-if="pEvent.attendees && pEvent.attendees.length > 0" class="event-location">
                 <strong>Attendees:</strong> {{ pEvent.attendees.join(', ') }}
               </div>
+              
               <div class="event-times">
+                <div class="event-day">
+                  <strong>Day:</strong> {{ formatDate(pEvent.start?.date_time || pEvent.start_time) }}
+                </div>
                 <div class="event-time">
                   <strong>Start:</strong> {{ formatDateTime(pEvent.start?.date_time || pEvent.start_time) }}
                 </div>
@@ -712,6 +816,29 @@
       </div>
     </div>
 
+    <div v-if="showDeleteSelectedConfirm" class="modal-overlay">
+      <div class="modal">
+        <h3>Delete Selected Events</h3>
+        <p>Are you sure you want to delete <strong>{{ selectedEvents.size }} selected events</strong>?</p>
+        <div class="modal-actions">
+          <button 
+            @click="confirmDeleteSelected" 
+            class="btn btn-danger"
+            :disabled="deletingSelectedEvents"
+          >
+            {{ deletingSelectedEvents ? 'Deleting...' : `Yes, Delete ${selectedEvents.size} Events` }}
+          </button>
+          <button 
+            @click="cancelDeleteSelected" 
+            class="btn btn-secondary"
+            :disabled="deletingSelectedEvents"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -727,10 +854,13 @@ const showEventForm = ref(false);
 const showUpdateForm = ref(false);
 const showDeleteConfirm = ref(false);
 const showDeleteAllConfirm = ref(false);
+const showDeleteSelectedConfirm = ref(false);
 const eventToDelete = ref(null);
 const deletingAllEvents = ref(false); 
+const deletingSelectedEvents = ref(false); 
 const deletingEvents = ref([]); 
 const searchQuery = ref('');
+const selectedEvents = ref(new Set());
 
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
@@ -891,6 +1021,71 @@ function deleteEvent(eventId) {
   showDeleteConfirm.value = true;
 }
 
+function toggleEventSelection(eventId){
+  if (selectedEvents.value.has(eventId)) {
+      selectedEvents.value.delete(eventId);
+  } else {
+      selectedEvents.value.add(eventId);
+  }
+}
+
+function isEventSelected(eventId) {
+  return selectedEvents.value.has(eventId);
+}
+
+function selectAllEvents() {
+  const allEventIds = allEvents.value.map(event => event.id);
+  selectedEvents.value = new Set(allEventIds);
+}
+
+function clearSelection() {
+  selectedEvents.value.clear();
+}
+
+async function deleteSelectedEvents() {
+  if (selectedEvents.value.size === 0) {
+    window.$toast.warning('No events selected');
+    return;
+  }
+  
+  showDeleteSelectedConfirm.value = true;
+}
+
+async function confirmDeleteSelected() {
+  if (selectedEvents.value.size === 0) return;
+  
+  deletingSelectedEvents.value = true;
+  const eventIds = Array.from(selectedEvents.value);
+  
+  try {
+    deletingEvents.value = [...deletingEvents.value, ...eventIds];
+    
+    for (const eventId of eventIds) {
+      try {
+        await store.dispatch('calendar/deleteEvent', eventId);
+      } catch (error) {
+        console.error(`Failed to delete event ${eventId}:`, error);
+      }
+    }
+    
+    window.$toast.success(`Successfully deleted ${eventIds.length} event(s)!`);
+    cancelDeleteSelected();
+    clearSelection();
+    await fetchEvents();
+    
+  } catch (error) {
+      console.error('Failed to delete selected events:', error);
+      window.$toast.error('Failed to delete selected events. Please try again.');
+  } finally {
+      deletingSelectedEvents.value = false;
+      deletingEvents.value = deletingEvents.value.filter(id => !eventIds.includes(id));
+  }
+}
+
+function cancelDeleteSelected() {
+  showDeleteSelectedConfirm.value = false;
+}
+
 async function deleteAllEvents() {
   if (totalEventsCount.value === 0) {
     window.$toast.warning('No events to delete');
@@ -922,10 +1117,10 @@ async function confirmDeleteAll() {
     await fetchEvents();
     
   } catch (error) {
-    console.error('Failed to delete all events:', error);
-    window.$toast.error('Failed to delete all events. Please try again.');
+      console.error('Failed to delete all events:', error);
+      window.$toast.error('Failed to delete all events. Please try again.');
   } finally {
-    deletingAllEvents.value = false;
+      deletingAllEvents.value = false;
   }
 }
 
@@ -1009,6 +1204,14 @@ function formatDateTime(dateTimeString) {
   return new Date(dateTimeString).toLocaleString();
 }
 
+function formatDate(dateTimeString) {
+  if (!dateTimeString) return 'N/A';
+  const date = new Date(dateTimeString);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+  });
+}
+
 function formatDateTimeForInput(dateTimeString) {
   if (!dateTimeString) return 'N/A';
   return dateTimeString.replace(/\..*$/, '').slice(0, 16);
@@ -1028,13 +1231,14 @@ function clearSearch() {
 <style scoped>
 .calendar-container {
   max-width: 1000px;
+  min-width: 950px;
   margin: 0 auto;
   padding: 20px;
 }
 
 .calendar-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
@@ -1192,7 +1396,8 @@ function clearSearch() {
   margin-bottom: 15px;
 }
 
-.event-time {
+.event-time ,
+.event-day{
   color: #666;
   font-size: 14px;
   margin-bottom: 5px;
@@ -1389,16 +1594,68 @@ function clearSearch() {
   border: 2px solid #333;
   transform: scale(1.1);
 }
-
+.search-container {
+  width: 100%;
+}
 .search-input {
+  width: 100%;
   padding: 10px;
   border-radius: 5px;
 }
 .search-input-wrapper {
+  width: 100%;
   display: flex;
   align-items: center;
 }
 .no-search-results {
   min-width: 700px;
 }
+.selection-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.selection-info {
+  font-size: 14px;
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.selection-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.bulk-selection-options {
+  margin: 10px 0;
+}
+
+.btn-sm {
+  font-size: 13px;
+}
+
+.event-card.selected {
+  background-color: #8bb1e6;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+  transform: translateY(-1px);
+}
+
+.event-checkbox {
+  margin-right: 12px;
+  transform: scale(1.1);
+  cursor: pointer;
+  accent-color: #2196f3;
+}
+
+.event-header {
+  display: flex;
+  align-items: center;
+}
+
 </style>

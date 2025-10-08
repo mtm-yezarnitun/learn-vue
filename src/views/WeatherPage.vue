@@ -158,6 +158,7 @@ button {
   font-size: 1rem;
 }
 .forecast-list {
+  width: 100%;
   list-style: none;
   padding: 0;
   margin-top: 1rem;
