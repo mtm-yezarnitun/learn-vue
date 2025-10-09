@@ -1078,7 +1078,7 @@ async function fetchEvents() {
   }
   await store.dispatch('calendar/fetchEvents');
 }
-  
+
 async function createEvent() {
     if (!isAuthenticated.value) {
       router.push('/login');

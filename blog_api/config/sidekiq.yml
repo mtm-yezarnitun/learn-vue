@@ -1,0 +1,11 @@
+:concurrency: 5
+
+:queues:
+  - default
+  - mailers
+
+:schedule:
+  google_calendar_auto_sync:
+    cron: "*/15 * * * *"   
+    class: "GoogleCalendarAutoSyncWorker"
+    queue: "default"

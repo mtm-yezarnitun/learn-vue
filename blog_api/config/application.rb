@@ -1,64 +1,66 @@
-require_relative 'boot'
+  require_relative 'boot'
 
-require 'rails'
-# Pick the frameworks you want:
-require 'active_model/railtie'
-require 'active_job/railtie'
-require 'active_record/railtie'
-require 'active_storage/engine'
-require 'action_controller/railtie'
-require 'action_mailer/railtie'
-require 'action_mailbox/engine'
-require 'action_text/engine'
-require 'action_view/railtie'
-require 'action_cable/engine'
-# require "rails/test_unit/railtie"
+  require 'rails'
 
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
-Bundler.require(*Rails.groups)
+  # Pick the frameworks you want:
+  require 'active_model/railtie'
+  require 'active_job/railtie'
+  require 'active_record/railtie'
+  require 'active_storage/engine'
+  require 'action_controller/railtie'
+  require 'action_mailer/railtie'
+  require 'action_mailbox/engine'
+  require 'action_text/engine'
+  require 'action_view/railtie'
+  require 'action_cable/engine'
+  # require "rails/test_unit/railtie"
 
-module BlogApi
-  class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 7.1
+  # Require the gems listed in Gemfile, including any gems
+  # you've limited to :test, :development, or :production.
+  Bundler.require(*Rails.groups)
 
-    # Please, add to the `ignore` list any other `lib` subdirectories that do
-    # not contain `.rb` files, or that should not be reloaded or eager loaded.
-    # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+  module BlogApi
+    class Application < Rails::Application
+      # Initialize configuration defaults for originally generated Rails version.
+      config.load_defaults 7.1
 
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
+      # Please, add to the `ignore` list any other `lib` subdirectories that do
+      # not contain `.rb` files, or that should not be reloaded or eager loaded.
+      # Common ones are `templates`, `generators`, or `middleware`, for example.
+      config.autoload_lib(ignore: %w[assets tasks])
 
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
-    config.api_only = true
+      # Configuration for the application, engines, and railties goes here.
+      #
+      # These settings can be overridden in specific environments using the files
+      # in config/environments, which are processed later.
+      #
+      # config.time_zone = "Central Time (US & Canada)"
+      # config.eager_load_paths << Rails.root.join("extras")
 
-    config.load_defaults 7.0 # or 6.x depending on your Rails version
+      # Only loads a smaller set of middleware suitable for API only apps.
+      # Middleware like session, flash, cookies can be added back manually.
+      # Skip views, helpers and assets when generating a new resource.
+      config.api_only = true
 
-    config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore
+      config.load_defaults 7.0 # or 6.x depending on your Rails version
 
-    config.active_job.queue_adapter = :sidekiq
-    
-    config.time_zone = 'Asia/Yangon'
-    config.active_record.default_timezone = :local
+      config.middleware.use ActionDispatch::Cookies
+      config.middleware.use ActionDispatch::Session::CookieStore
 
-    # Allow frontend (Vue) to access the API
-    config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins 'http://localhost:5173' # your Vue dev server
-        resource '*',
-                 headers: :any,
-                 methods: %i[get post delete put patch options head]
+      config.active_job.queue_adapter = :sidekiq
+
+      
+      config.time_zone = 'Asia/Yangon'
+      config.active_record.default_timezone = :local
+
+      # Allow frontend (Vue) to access the API
+      config.middleware.insert_before 0, Rack::Cors do
+        allow do
+          origins 'http://localhost:5173' # your Vue dev server
+          resource '*',
+                  headers: :any,
+                  methods: %i[get post delete put patch options head]
+        end
       end
     end
   end
-end

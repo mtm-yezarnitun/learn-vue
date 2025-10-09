@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+require 'sidekiq/web'
+require 'sidekiq/cron/web'
+
   devise_for :users,
              defaults: { format: :json },
              controllers: {
@@ -22,6 +25,7 @@ Rails.application.routes.draw do
       post '/calendar/events', to: 'calendar#create_event'
       patch '/calendar/events/:id', to: 'calendar#update'
       delete '/calendar/events/:id', to: 'calendar#destroy'
+
       
       resources :posts do
         resources :comments, only: [:index, :create, :destroy]
@@ -34,7 +38,9 @@ Rails.application.routes.draw do
     resources :users
   end
 
+
   if Rails.env.development?
+    mount Sidekiq::Web => '/sidekiq'
     mount LetterOpenerWeb::Engine, at: "/mailbox"
   end
   
