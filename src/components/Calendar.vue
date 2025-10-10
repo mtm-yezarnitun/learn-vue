@@ -130,7 +130,17 @@
               class="btn btn-primary" 
               :disabled="loading"
             >
-              {{ loading ? 'Loading...' : 'Export Events' }}
+              {{ loading ? 'Loading...' : 'Export Events as PDF' }}
+            </button>
+          </div>
+
+          <div>
+            <button 
+              @click="exportEventsCsv" 
+              class="btn btn-primary" 
+              :disabled="loading"
+            >
+              {{ loading ? 'Loading...' : 'Export Events as Csv' }}
             </button>
           </div>
 
@@ -882,6 +892,15 @@
     <div v-if="currentView === 'calendar'" class="calendar-view">
       <div class="calender-header">
         <div class="calender-actions">
+            <div>
+              <button 
+                @click="exportEvents" 
+                class="btn btn-primary" 
+                :disabled="loading"
+              >
+                {{ loading ? 'Loading...' : 'Export Events as PDF' }}
+              </button>
+            </div>
             <div class="view-toggle">
               <button 
                 @click="currentView = 'list'" 
@@ -1134,6 +1153,33 @@ async function exportEvents (){
   } catch (error) {
       console.error('Failed to export PDF:', error);
       window.$toast.error('Failed to export PDF. Try again.');
+  } 
+};
+
+async function exportEventsCsv (){
+  if (!isAuthenticated.value) {
+    window.$toast.warning('You must be logged in');
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const response = await axios.get('http://localhost:3000/api/v1/calendar/export_csv', {
+      responseType: 'blob', 
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `all_events.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.$toast.success('CSV downloaded successfully!');
+  } catch (error) {
+      console.error('Failed to export CSV:', error);
+      window.$toast.error('Failed to export CSV. Try again.');
   } 
 };
 

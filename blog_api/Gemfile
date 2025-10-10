@@ -8,6 +8,7 @@ gem 'sqlite3', '~> 1.4'
 
 # Gemfile
 gem 'byebug'
+gem 'csv'
 gem 'devise'
 gem 'devise-jwt'
 gem 'dotenv-rails', '~> 2.1', '>= 2.1.1'
