@@ -1,10 +1,45 @@
 module Api::V1
   class CalendarController < ApplicationController
     before_action :authenticate_user!
+    after_action :update_cached_events, only: [:create_event, :update, :destroy]
+
+    def cached_events
+      redis = Redis.new
+      data = redis.get("user:#{current_user.id}:events")
+
+      if data 
+        render json: { events: JSON.parse(data)}
+
+      else
+        service = current_user.google_calendar_service
+        if service
+          begin
+            events = service.list_events(
+              'primary',
+              single_events: true,
+              order_by: 'startTime',
+              time_min: 1.year.ago.rfc3339
+            )
+
+            formatted = events.items.map { |e| calendar_event_to_json(e) }
+            Redis.new.set("user:#{current_user.id}:events", formatted.to_json)
+            Rails.logger.info "✅ Redis cached for user #{current_user.id}"
+            render json: { events: formatted }  
+          rescue => e
+            Rails.logger.error "⚠️ Failed to Redis cache: #{e.message}"
+            render json: { events: [], error: 'Failed to fetch events from Google Calendar' }, status: :internal_server_error
+          end
+        else
+          render json: { events: [], error: 'Google Calendar not connected' }, status: :unauthorized
+        end
+
+      end
+
+    end
 
     def events
       service = current_user.google_calendar_service
-      if service.nil?
+      if service.nil? 
         if current_user.refresh_google_token
           service = current_user.google_calendar_service
         end
@@ -20,8 +55,9 @@ module Api::V1
         order_by: 'startTime',
         time_min: 1.year.ago.rfc3339
       )
-
+      
       formatted_events = events.items.map { |event| calendar_event_to_json(event) }
+      Redis.new.set("user:#{current_user.id}:events", formatted_events.to_json)
 
       render json: { events: formatted_events }
     rescue Google::Apis::AuthorizationError => e
@@ -77,9 +113,12 @@ module Api::V1
         event.recurrence = [recurrence_rule] if recurrence_rule
 
         result = service.insert_event('primary', event)
-
+        
         render json: { event: calendar_event_to_json(result) }
 
+        redis = Redis.new
+        redis.del("user:#{current_user.id}:events")
+        
       rescue ArgumentError => e
         render json: { error: 'Invalid date format' }, status: :bad_request
       rescue Google::Apis::ClientError => e
@@ -143,6 +182,9 @@ module Api::V1
 
         result = service.update_event('primary', params[:id], existing_event)
 
+        redis = Redis.new
+        redis.del("user:#{current_user.id}:events")
+
         render json: { event: calendar_event_to_json(result) }
 
       rescue ArgumentError => e
@@ -171,6 +213,10 @@ module Api::V1
 
       begin
         service.delete_event('primary', params[:id])
+
+        redis = Redis.new
+        redis.del("user:#{current_user.id}:events")
+
         render json: { message: 'Event deleted successfully' }
       rescue Google::Apis::ClientError => e
         render json: { error: 'Event not found' }, status: :not_found
@@ -204,6 +250,27 @@ module Api::V1
           end_time: event.end&.date_time,
           html_link: event.html_link
         }
+      end
+
+      def update_cached_events
+        service = current_user.google_calendar_service
+        return unless service
+
+        begin
+          events = service.list_events(
+            'primary',
+            single_events: true,
+            order_by: 'startTime',
+            time_min: 1.year.ago.rfc3339
+          )
+
+          formatted = events.items.map { |e| calendar_event_to_json(e) }
+
+          Redis.new.set("user:#{current_user.id}:events", formatted.to_json)
+          Rails.logger.info "✅ Redis cache refreshed for user #{current_user.id}"
+        rescue => e
+          Rails.logger.error "⚠️ Failed to refresh Redis cache: #{e.message}"
+        end
       end
   end
 end

@@ -22,6 +22,7 @@ require 'sidekiq/cron/web'
       get 'google_callback', to: 'google_auth#callback'
 
       get '/calendar/events', to: 'calendar#events'
+       get 'calendar/cached_events', to: 'calendar#cached_events'
       post '/calendar/events', to: 'calendar#create_event'
       patch '/calendar/events/:id', to: 'calendar#update'
       delete '/calendar/events/:id', to: 'calendar#destroy'

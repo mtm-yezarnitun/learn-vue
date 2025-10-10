@@ -103,7 +103,7 @@
       <div class="calendar-header">
         <div class="calendar-actions">
           <button 
-            @click="fetchEvents" 
+            @click="refreshEvents" 
             class="btn btn-primary" 
             :disabled="loading"
           >
@@ -1076,7 +1076,27 @@ async function fetchEvents() {
     router.push('/login');
     return;
   }
-  await store.dispatch('calendar/fetchEvents');
+
+  try {
+      store.dispatch('calendar/fetchEvents');
+  } catch (error) {
+      console.error('Calendar fetch error:', error);
+  } finally {
+  }
+}
+
+async function refreshEvents() {
+  if (!isAuthenticated.value) {
+    router.push('/login');
+    return;
+  }
+
+  try {
+      store.dispatch('calendar/refreshEvents');
+  } catch (error) {
+      console.error('Calendar refresh error:', error);
+  } finally {
+  }
 }
 
 async function createEvent() {
@@ -1263,6 +1283,8 @@ async function confirmDelete() {
   try {
     await store.dispatch('calendar/deleteEvent', eventId);
     window.$toast.success('Event deleted successfully!');
+    clearSelection();
+
   } catch (error) {
     console.error('Failed to delete event:', error);
   } finally {

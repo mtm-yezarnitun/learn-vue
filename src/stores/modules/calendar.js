@@ -66,13 +66,14 @@ const calendar = {
           throw new Error('No authentication token found');
         }
 
-        const response = await axios.get(`${API_URL}/api/v1/calendar/events` , {
+        const response = await axios.get(`${API_URL}/api/v1/calendar/cached_events` , {
           headers: {
             'Authorization' : ` Bearer ${token}`,
             'Content-type' : 'application/json'
           }
         });
-        commit('setEvents', response.data.events || []);
+        const events = response.data.events || [];
+        commit('setEvents', events || []);
       } catch (error) {
         if (error.response?.status === 401) {
           const errorMsg = error.response?.data?.error || error.response?.data?.message || 'Google Calendar not connected . Logout and Login again to regain Access!';
@@ -93,6 +94,25 @@ const calendar = {
       }
     },
 
+    async refreshEvents({ commit, rootGetters }) {
+      if (!rootGetters['auth/isAuthenticated']) return commit('setError', 'Please login');
+
+      commit('setLoading', true);
+      commit('clearError');
+      try {
+        const token = rootGetters['auth/token'] || localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/api/v1/calendar/events`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        commit('setEvents', response.data.events || []);
+      } catch (error) {
+        commit('setError', 'Failed to refresh events');
+        console.error(error);
+      } finally {
+        commit('setLoading', false);
+      }
+    },
+    
     async createEvent({ commit, rootGetters }, eventData) {
       if (!rootGetters['auth/isAuthenticated']) {
         commit('setError', 'Please login to create events');
