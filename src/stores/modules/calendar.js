@@ -112,7 +112,7 @@ const calendar = {
         commit('setLoading', false);
       }
     },
-    
+
     async createEvent({ commit, rootGetters }, eventData) {
       if (!rootGetters['auth/isAuthenticated']) {
         commit('setError', 'Please login to create events');

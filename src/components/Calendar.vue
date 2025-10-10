@@ -124,6 +124,16 @@
             🗑️ Delete All Events
           </button> 
 
+          <div>
+            <button 
+              @click="exportEvents" 
+              class="btn btn-primary" 
+              :disabled="loading"
+            >
+              {{ loading ? 'Loading...' : 'Export Events' }}
+            </button>
+          </div>
+
           <div class="view-toggle">
             <button 
               @click="currentView = 'list'" 
@@ -945,6 +955,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const store = useStore();
 const router = useRouter();
@@ -1039,6 +1050,8 @@ const searchedEventsByType = computed(() => {
   return { ongoing, upcoming, past };
 });
 
+
+
 const isSearching = computed(() => searchQuery.value.length > 0);
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
@@ -1081,7 +1094,6 @@ async function fetchEvents() {
       store.dispatch('calendar/fetchEvents');
   } catch (error) {
       console.error('Calendar fetch error:', error);
-  } finally {
   }
 }
 
@@ -1095,9 +1107,35 @@ async function refreshEvents() {
       store.dispatch('calendar/refreshEvents');
   } catch (error) {
       console.error('Calendar refresh error:', error);
-  } finally {
-  }
+  } 
 }
+
+async function exportEvents (){
+  if (!isAuthenticated.value) {
+    window.$toast.warning('You must be logged in');
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const response = await axios.get('http://localhost:3000/api/v1/calendar/export_pdf', {
+      responseType: 'blob', 
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `all_events.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.$toast.success('PDF downloaded successfully!');
+  } catch (error) {
+      console.error('Failed to export PDF:', error);
+      window.$toast.error('Failed to export PDF. Try again.');
+  } 
+};
 
 async function createEvent() {
     if (!isAuthenticated.value) {

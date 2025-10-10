@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
-require 'sidekiq/web'
-require 'sidekiq/cron/web'
+  require 'sidekiq/web'
+  require 'sidekiq/cron/web'
 
   devise_for :users,
              defaults: { format: :json },
@@ -22,16 +22,17 @@ require 'sidekiq/cron/web'
       get 'google_callback', to: 'google_auth#callback'
 
       get '/calendar/events', to: 'calendar#events'
-       get 'calendar/cached_events', to: 'calendar#cached_events'
+      get 'calendar/cached_events', to: 'calendar#cached_events'
       post '/calendar/events', to: 'calendar#create_event'
       patch '/calendar/events/:id', to: 'calendar#update'
       delete '/calendar/events/:id', to: 'calendar#destroy'
 
-      
+      get '/calendar/export_pdf', to: 'calendar#export_pdf'
+
       resources :posts do
-        resources :comments, only: [:index, :create, :destroy]
+        resources :comments, only: %i[index create destroy]
       end
-      resource :profile, only: [:show, :update] 
+      resource :profile, only: %i[show update]
     end
   end
 
@@ -39,10 +40,8 @@ require 'sidekiq/cron/web'
     resources :users
   end
 
-
   if Rails.env.development?
     mount Sidekiq::Web => '/sidekiq'
-    mount LetterOpenerWeb::Engine, at: "/mailbox"
+    mount LetterOpenerWeb::Engine, at: '/mailbox'
   end
-  
 end

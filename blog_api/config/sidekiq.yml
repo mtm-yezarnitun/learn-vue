@@ -6,6 +6,6 @@
 
 :schedule:
   google_calendar_auto_sync:
-    cron: "*/15 * * * *"   
+    cron: "*/5 * * * *"   
     class: "GoogleCalendarAutoSyncWorker"
     queue: "default"
