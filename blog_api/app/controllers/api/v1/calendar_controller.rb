@@ -217,33 +217,68 @@ module Api::V1
       cached_events = Redis.new.get("user:#{current_user.id}:events")
       events = cached_events.present? ? JSON.parse(cached_events) : []
 
-      pdf = Prawn::Document.new
+      now = Time.now 
+      filter = params[:filter] || 'all'
 
-      pdf.text 'All Events', size: 24, style: :bold
-      pdf.move_down 20
+      filter_events = events.select do |event|
+        start_time=Time.parse(event['start_time']) rescue nil
+        end_time=Time.parse(event['end_time']) rescue nil
 
-      events.each do |event|
-        pdf.text "Title: #{event['title']}", style: :bold
-        pdf.text "Description: #{event['description']}" if event['description'].present?
-        pdf.text "Location: #{event['location']}" if event['location'].present?
+        next false unless start_time && end_time
 
-        if event['attendees'].present? && event['attendees'].any?
-          pdf.text "Attendees: #{event['attendees'].join(', ')}"
-        else
-          pdf.text 'Attendees: None'
+        case filter 
+          when 'past'
+            end_time < now
+          when 'ongoing'
+            start_time <= now && end_time >= now
+          when 'upcoming'
+            start_time > now
+          else 
+            true
         end
 
-        start_time = Time.parse(event['start_time']).strftime('%b %d, %Y %I:%M %p')
-        pdf.text "Start: #{start_time}"
-
-        end_time = Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p')
-        pdf.text "End: #{end_time}"
-
-        pdf.move_down 34
       end
 
-      send_data pdf.render,
-                filename: 'all_events.pdf',
+      if filter_events.empty?
+        pdf = Prawn::Document.new
+          pdf.text "#{filter.capitalize}_Events", size: 24, style: :bold
+          pdf.move_down 20
+          pdf.text "No #{filter.capitalize} Events Found", size: 16, style: :italic
+
+          pdf_data = pdf.render
+
+          ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data))
+      else
+        pdf = Prawn::Document.new
+          pdf.text "#{filter.capitalize}_Events", size: 24, style: :bold
+          pdf.move_down 20
+            filter_events.each do |event|
+              pdf.text "Title: #{event['title']}", style: :bold
+              pdf.text "Description: #{event['description']}" if event['description'].present?
+              pdf.text "Location: #{event['location']}" if event['location'].present?
+
+              if event['attendees'].present? && event['attendees'].any?
+                pdf.text "Attendees: #{event['attendees'].join(', ')}"
+              else
+                pdf.text 'Attendees: None'
+              end
+
+              start_time = Time.parse(event['start_time']).strftime('%b %d, %Y %I:%M %p')
+              pdf.text "Start: #{start_time}"
+
+              end_time = Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p')
+              pdf.text "End: #{end_time}"
+
+              pdf.move_down 34
+            end
+
+        pdf_data = pdf.render
+        ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data))
+      
+      end
+
+      send_data pdf_data,
+                filename: '#{filter}_events.pdf',
                 type: 'application/pdf',
                 disposition: 'attachment'
     end
@@ -254,23 +289,57 @@ module Api::V1
       cached_events = Redis.new.get("user:#{current_user.id}:events")
       events = cached_events.present? ? JSON.parse(cached_events) : []
 
-      csv_string = CSV.generate(headers: true) do |csv|
-        csv << ['Title', 'Description', 'Start Time', 'End Time', 'Location', 'Attendees']
+      now = Time.now 
+      filter = params[:filter] || 'all'
 
-        events.each do |event|
-          csv << [
-            event['title'],
-            event['description'],
-            event['start_time'] ? Time.parse(event['start_time']).strftime('%b %d, %Y %I:%M %p') : '',
-            event['end_time'] ? Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p') : '',
-            event['location'],
-            event['attendees']&.join(', ')
-          ]
+      filter_events = events.select do |event|
+        start_time=Time.parse(event['start_time']) rescue nil
+        end_time=Time.parse(event['end_time']) rescue nil
+
+        next false unless start_time && end_time
+
+        case filter 
+          when 'past'
+            end_time < now
+          when 'ongoing'
+            start_time <= now && end_time >= now
+          when 'upcoming'
+            start_time > now
+          else 
+            true
         end
+
+      end
+    
+      if filter_events.empty?
+        csv_data = CSV.generate(headers: true) do |csv|
+        csv << ["No #{filter.capitalize} Events Found"]
+        
+        UserMailer.send_calendar_csv(current_user, csv_data).deliver_later
       end
 
-      send_data csv_string,
-                filename: 'all_events.csv',
+      else
+        csv_data = CSV.generate(headers: true) do |csv|
+          csv << ['Title', 'Description', 'Start Time', 'End Time', 'Location', 'Attendees']
+
+          filter_events.each do |event|
+            csv << [
+              event['title'],
+              event['description'],
+              event['start_time'] ? Time.parse(event['start_time']).strftime('%b %d, %Y %I:%M %p') : '',
+              event['end_time'] ? Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p') : '',
+              event['location'],
+              event['attendees']&.join(', ')
+            ]
+          end
+        end
+
+        UserMailer.send_calendar_csv(current_user, csv_data).deliver_later
+
+      end 
+
+      send_data csv_data,
+                filename: '#{filter}_events.csv',
                 type: 'text/csv',
                 disposition: 'attachment'
     end

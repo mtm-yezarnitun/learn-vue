@@ -124,24 +124,28 @@
             🗑️ Delete All Events
           </button> 
 
-          <div>
-            <button 
-              @click="exportEvents" 
-              class="btn btn-primary" 
-              :disabled="loading"
-            >
-              {{ loading ? 'Loading...' : 'Export Events as PDF' }}
+          <div class="dropdown" v-if="totalEventsCount > 0">
+            <button @click="showPdfOptions = !showPdfOptions" class="btn btn-primary">
+              Export as PDF
             </button>
+            <div v-if="showPdfOptions" class="dropdown-menu">
+              <button class="dropdown-item" @click="exportEvents('past')">Past Events</button>
+              <button class="dropdown-item" @click="exportEvents('ongoing')">Ongoing Events</button>
+              <button class="dropdown-item" @click="exportEvents('upcoming')">Upcoming Events</button>
+              <button class="dropdown-item" @click="exportEvents('all')">All Events</button>
+            </div>
           </div>
 
-          <div>
-            <button 
-              @click="exportEventsCsv" 
-              class="btn btn-primary" 
-              :disabled="loading"
-            >
-              {{ loading ? 'Loading...' : 'Export Events as CSV' }}
+          <div class="dropdown mt-2" v-if="totalEventsCount > 0">
+            <button @click="showCsvOptions = !showCsvOptions" class="btn btn-primary">
+              Export as CSV
             </button>
+            <div v-if="showCsvOptions" class="dropdown-menu">
+              <button class="dropdown-item" @click="exportEventsCsv('past')">Past Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('ongoing')">Ongoing Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('upcoming')">Upcoming Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('all')">All Events</button>
+            </div>
           </div>
 
           <div class="view-toggle">
@@ -983,6 +987,8 @@ const searchQuery = ref('');
 const currentView = ref('list'); 
 const currentMonth = ref(new Date());
 const selectedEvents = ref(new Set());
+const showPdfOptions = ref(false);
+const showCsvOptions = ref(false);
 
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
@@ -1024,6 +1030,7 @@ const allEvents = computed (()=> [
   ...events.value,
   ...pastEvents.value
 ]);
+
 
 
 const searchedEvents = computed(() => {
@@ -1094,6 +1101,7 @@ onMounted(() => {
 
 });
 
+
 async function fetchEvents() {
   if (!isAuthenticated.value) {
     router.push('/login');
@@ -1120,7 +1128,7 @@ async function refreshEvents() {
   } 
 }
 
-async function exportEvents (){
+async function exportEvents (filter = 'all'){
   if (!isAuthenticated.value) {
     window.$toast.warning('You must be logged in');
     router.push('/login');
@@ -1129,16 +1137,19 @@ async function exportEvents (){
 
   try {
     const response = await axios.get('http://localhost:3000/api/v1/calendar/export_pdf', {
+      params: { filter },
       responseType: 'blob', 
     });
 
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `all_events.pdf`);
+    link.setAttribute('download', `${filter}_events.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+
+    showPdfOptions.value = false;
 
     window.$toast.success('PDF downloaded successfully!');
   } catch (error) {
@@ -1147,7 +1158,7 @@ async function exportEvents (){
   } 
 };
 
-async function exportEventsCsv (){
+async function exportEventsCsv (filter = 'all'){
   if (!isAuthenticated.value) {
     window.$toast.warning('You must be logged in');
     router.push('/login');
@@ -1156,16 +1167,19 @@ async function exportEventsCsv (){
 
   try {
     const response = await axios.get('http://localhost:3000/api/v1/calendar/export_csv', {
+      params: { filter },
       responseType: 'blob', 
     });
 
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/csv' }));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `all_events.csv`);
+    link.setAttribute('download', `${filter}_events.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+
+    showCsvOptions.value = false;
 
     window.$toast.success('CSV downloaded successfully!');
   } catch (error) {
@@ -2073,4 +2087,13 @@ const calendarDays = computed(() => {
   font-weight: 600;
 }
 
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background-color: rgb(82, 82, 82);
+  border-radius: 10%;
+}
 </style>

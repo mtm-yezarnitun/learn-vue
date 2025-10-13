@@ -84,7 +84,7 @@ const calendar = {
           }
         } else {
           const errorMsg = error.response?.data?.error || "Failed to fetch calendar events";
-          window.$toast.error('Fail to fetch calendar events!');
+          window.$toast.error('Fail to fetch calendar events! Logout and Login again to refresh tokens');
           commit('setError', errorMsg);
         }
         console.error('Calendar fetch error:', error);
