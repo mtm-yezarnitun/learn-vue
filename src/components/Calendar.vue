@@ -1,4 +1,24 @@
 <template>
+  <div class="view-toggle">
+    
+    <button 
+      @click="currentView = 'list'" 
+      :class="{ active: currentView === 'list' }"
+      class="btn btn-outline"
+    >
+    📋 List
+    </button>
+
+    <button 
+      @click="currentView = 'calendar'" 
+      :class="{ active: currentView === 'calendar' }"
+      class="btn btn-outline"
+      >
+    📅 Calendar
+    </button>
+
+  </div>
+
   <div class="calendar-container">
     <div v-if="showUpdateForm" class="event-form-overlay">
         <div class="event-form">
@@ -148,23 +168,6 @@
             </div>
           </div>
 
-          <div class="view-toggle">
-            <button 
-              @click="currentView = 'list'" 
-              :class="{ active: currentView === 'list' }"
-              class="btn btn-outline"
-            >
-              📋 List
-            </button>
-            <button 
-              @click="currentView = 'calendar'" 
-              :class="{ active: currentView === 'calendar' }"
-              class="btn btn-outline"
-            >
-              📅 Calendar
-            </button>
-          </div>
-        
         </div>
       </div>
 
@@ -894,26 +897,36 @@
 
   <div class="calendar-container">
     <div v-if="currentView === 'calendar'" class="calendar-view">
-      <div class="calender-header">
-        <div class="calender-actions">
-            <div class="view-toggle">
-              <button 
-                @click="currentView = 'list'" 
-                :class="{ active: currentView === 'list' }"
-                class="btn btn-outline"
-              >
-                📋 List
-              </button>
-              <button 
-                @click="currentView = 'calendar'" 
-                :class="{ active: currentView === 'calendar' }"
-                class="btn btn-outline"
-              >
-                📅 Calendar
-              </button>
+      <div class="calendar-header">
+        <div class="calendar-actions">
+          
+          <div class="dropdown" v-if="totalEventsCount > 0">
+            <button @click="showPdfOptions = !showPdfOptions" class="btn btn-primary">
+              Export as PDF
+            </button>
+            <div v-if="showPdfOptions" class="dropdown-menu">
+              <button class="dropdown-item" @click="exportEvents('past')">Past Events</button>
+              <button class="dropdown-item" @click="exportEvents('ongoing')">Ongoing Events</button>
+              <button class="dropdown-item" @click="exportEvents('upcoming')">Upcoming Events</button>
+              <button class="dropdown-item" @click="exportEvents('all')">All Events</button>
             </div>
+          </div>
+
+          <div class="dropdown mt-2" v-if="totalEventsCount > 0">
+            <button @click="showCsvOptions = !showCsvOptions" class="btn btn-primary">
+              Export as CSV
+            </button>
+            <div v-if="showCsvOptions" class="dropdown-menu">
+              <button class="dropdown-item" @click="exportEventsCsv('past')">Past Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('ongoing')">Ongoing Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('upcoming')">Upcoming Events</button>
+              <button class="dropdown-item" @click="exportEventsCsv('all')">All Events</button>
+            </div>
+          </div>
+
         </div>
       </div>
+
 
       <div class="month-navigation">
           <button @click="previousMonth" class="btn btn-outline">←</button>
@@ -1096,6 +1109,15 @@ onMounted(() => {
       if (showDeleteConfirm.value) cancelDelete();
       if (showDeleteAllConfirm.value) cancelDeleteAll();
       if (showDeleteSelectedConfirm.value) cancelDeleteSelected();
+      if (showCsvOptions.value) {
+        showCsvOptions.value = false
+      }
+      if (showPdfOptions.value) {
+        showPdfOptions.value = false
+      }
+      if(selectAllEvents) {
+        clearSelection();
+      }
     }
   });
 

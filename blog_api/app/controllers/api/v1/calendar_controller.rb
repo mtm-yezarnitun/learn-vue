@@ -247,7 +247,7 @@ module Api::V1
 
           pdf_data = pdf.render
 
-          ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data))
+          ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data),filter)
       else
         pdf = Prawn::Document.new
           pdf.text "#{filter.capitalize}_Events", size: 24, style: :bold
@@ -273,12 +273,12 @@ module Api::V1
             end
 
         pdf_data = pdf.render
-        ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data))
+        ExportPdfEmailWorker.perform_async(current_user.id, Base64.encode64(pdf_data),filter)
       
       end
 
       send_data pdf_data,
-                filename: '#{filter}_events.pdf',
+                filename: "#{filter}_events.pdf",
                 type: 'application/pdf',
                 disposition: 'attachment'
     end
@@ -315,7 +315,7 @@ module Api::V1
         csv_data = CSV.generate(headers: true) do |csv|
         csv << ["No #{filter.capitalize} Events Found"]
         
-        UserMailer.send_calendar_csv(current_user, csv_data).deliver_later
+        UserMailer.send_calendar_csv(current_user, csv_data,filter).deliver_later
       end
 
       else
@@ -334,7 +334,7 @@ module Api::V1
           end
         end
 
-        UserMailer.send_calendar_csv(current_user, csv_data).deliver_later
+        UserMailer.send_calendar_csv(current_user, csv_data,filter).deliver_later
 
       end 
 
