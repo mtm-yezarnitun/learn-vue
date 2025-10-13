@@ -28,7 +28,8 @@ Rails.application.routes.draw do
       delete '/calendar/events/:id', to: 'calendar#destroy'
 
       get '/calendar/export_pdf', to: 'calendar#export_pdf'
-
+      get '/calendar/export_csv', to: 'calendar#export_csv'
+      
       resources :posts do
         resources :comments, only: %i[index create destroy]
       end

@@ -239,7 +239,7 @@ module Api::V1
         end_time = Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p')
         pdf.text "End: #{end_time}"
 
-        pdf.move_down 10
+        pdf.move_down 34
       end
 
       send_data pdf.render,
@@ -248,6 +248,33 @@ module Api::V1
                 disposition: 'attachment'
     end
 
+    def export_csv
+      require 'csv'
+
+      cached_events = Redis.new.get("user:#{current_user.id}:events")
+      events = cached_events.present? ? JSON.parse(cached_events) : []
+
+      csv_string = CSV.generate(headers: true) do |csv|
+        csv << ['Title', 'Description', 'Start Time', 'End Time', 'Location', 'Attendees']
+
+        events.each do |event|
+          csv << [
+            event['title'],
+            event['description'],
+            event['start_time'] ? Time.parse(event['start_time']).strftime('%b %d, %Y %I:%M %p') : '',
+            event['end_time'] ? Time.parse(event['end_time']).strftime('%b %d, %Y %I:%M %p') : '',
+            event['location'],
+            event['attendees']&.join(', ')
+          ]
+        end
+      end
+
+      send_data csv_string,
+                filename: 'all_events.csv',
+                type: 'text/csv',
+                disposition: 'attachment'
+    end
+    
     private
 
     def calendar_event_to_json(event)
