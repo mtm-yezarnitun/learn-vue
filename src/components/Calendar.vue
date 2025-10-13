@@ -1,6 +1,6 @@
 <template>
   <div class="view-toggle">
-    
+
     <button 
       @click="currentView = 'list'" 
       :class="{ active: currentView === 'list' }"
@@ -959,9 +959,9 @@
                 :key="event.id"
                 class="calendar-event"
                 :style="{ backgroundColor: getEventColor(event) }"
-                @click="openUpdateForm(event)"
+                @click="openDetailForm(event)"
                 :title="event.summary || event.title"
-              >
+                >
                 <div class="event-time">
                   {{ formatDateTime(event.start?.date_time || event.start_time) }}
                 </div>
@@ -972,6 +972,43 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <div v-if="showEventDetail" class="event-form-overlay">
+      <div class="event-form">
+        <h3>Event Details</h3>
+        <div v-if="error" class="error-message">
+          {{ error }}
+          <button @click="clearError" class="btn-close">×</button>
+        </div>
+
+        <div class="form-group event-location">
+          <label>Title:</label>
+          {{ selectedEventDetail.title }}
+        </div>
+        <div class="form-group event-location">
+          <label>Description:</label>
+          {{ selectedEventDetail.description }}
+        </div>
+        <div class="form-group event-location">
+          <label>Location:</label>
+          {{ selectedEventDetail.location }}
+        </div>
+        <div class="form-group event-location">
+          <label>Attendees:</label>
+          {{ selectedEventDetail.attendees }}
+        </div>
+        <div class="form-group event-location">
+          <label>Start Time:</label>
+          {{ formatDateTime(selectedEventDetail.start?.date_time || selectedEventDetail.start_time) }} 
+        </div>
+        <div class="form-group event-location">
+          <label>End Time:</label>
+          {{ formatDateTime(selectedEventDetail.end?.date_time || selectedEventDetail.end_time) }} 
+        </div>
+
+        <button @click="closeDetailForm" class="btn btn-secondary">Close</button>
       </div>
     </div>
   </div>
@@ -1002,6 +1039,8 @@ const currentMonth = ref(new Date());
 const selectedEvents = ref(new Set());
 const showPdfOptions = ref(false);
 const showCsvOptions = ref(false);
+const selectedEventDetail = ref(null); 
+const showEventDetail = ref(false); 
 
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
@@ -1043,8 +1082,6 @@ const allEvents = computed (()=> [
   ...events.value,
   ...pastEvents.value
 ]);
-
-
 
 const searchedEvents = computed(() => {
   if (!searchQuery.value) return allEvents.value;
@@ -1109,6 +1146,7 @@ onMounted(() => {
       if (showDeleteConfirm.value) cancelDelete();
       if (showDeleteAllConfirm.value) cancelDeleteAll();
       if (showDeleteSelectedConfirm.value) cancelDeleteSelected();
+      if (selectedEventDetail.value) closeDetailForm();
       if (showCsvOptions.value) {
         showCsvOptions.value = false
       }
@@ -1173,7 +1211,7 @@ async function exportEvents (filter = 'all'){
 
     showPdfOptions.value = false;
 
-    window.$toast.success('PDF downloaded successfully!');
+    window.$toast.success('PDF downloaded And Email sent to you successfully!');
   } catch (error) {
       console.error('Failed to export PDF:', error);
       window.$toast.error('Failed to export PDF. Try again.');
@@ -1203,7 +1241,7 @@ async function exportEventsCsv (filter = 'all'){
 
     showCsvOptions.value = false;
 
-    window.$toast.success('CSV downloaded successfully!');
+    window.$toast.success('CSV downloaded And Email sent to you successfully!');
   } catch (error) {
       console.error('Failed to export CSV:', error);
       window.$toast.error('Failed to export CSV. Try again.');
@@ -1536,6 +1574,26 @@ const calendarDays = computed(() => {
   
   return days;
 });
+
+function openDetailForm(event) {
+  selectedEventDetail.value = {
+    id: event.id,
+    title: event.summary || event.title || '',
+    description: event.description || '',
+    location: event.location || '',
+    attendees: event.attendees?.join(', ') || 'None',
+    start_time: event.start?.date_time || event.start_time,
+    end_time: event.end?.date_time || event.end_time,
+    colorId: event.colorId || event.color_id || '1'
+  };
+
+  showEventDetail.value = true; 
+}
+
+function closeDetailForm() {
+  selectedEventDetail.value = null;
+  showEventDetail.value = false;
+}
 
 </script>
 
