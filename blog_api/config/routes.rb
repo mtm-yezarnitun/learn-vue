@@ -30,6 +30,7 @@ Rails.application.routes.draw do
       get '/calendar/export_pdf', to: 'calendar#export_pdf'
       get '/calendar/export_csv', to: 'calendar#export_csv'
       post '/calendar/import_csv', to: 'calendar#import_csv'
+      get '/calendar/import_status', to: 'calendar#import_status'
       get '/calendar/download_template', to: 'calendar#download_template'
       
       resources :posts do

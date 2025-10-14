@@ -357,9 +357,6 @@
           <button @click="downloadTemplate" class="btn btn-primary">Download CSV Template</button>
           <button @click="uploadCSV" :disabled="!csvFile">Upload</button>
           <button @click="closeUploadForm" class="btn btn-secondary">Close</button>
-          <div v-if="status" class="event-location">
-            {{ status }}
-          </div>
         </div>
       </div>
 
@@ -1245,12 +1242,27 @@ async function uploadCSV() {
     const response = await axios.post('http://localhost:3000/api/v1/calendar/import_csv', formData , {
       headers: { "Content-Type": "multipart/form-data" }
     })
-    status.value = response.data.message
-    window.$toast.success('CSV imported successfully! Refresh to see the results!');
     showUploadForm.value = false;
-  } catch(e) {
-    status.value = "Upload Files"
-    window.$toast.error('Cannot Import Files!');
+    const jobKey = response.data.job_key
+
+    let finished = false
+      while (!finished) {
+        const statusRes = await axios.get('http://localhost:3000/api/v1/calendar/import_status', { params: { job_key: jobKey } })
+
+        if (statusRes.data.status === "ok") {
+          window.$toast.success(statusRes.data.message + "Refresh to see results!")
+          finished = true
+        } else if (statusRes.data.status === "error") {
+          window.$toast.error(statusRes.data.message + '\n' + (statusRes.data.errors?.slice(0, 3).join('\n') || ""))
+          finished = true 
+        } else {
+          await new Promise(r => setTimeout(r, 1000)) 
+        }
+      }
+
+  }catch(err) {
+    showUploadForm.value = false
+    window.$toast.error("Import failed! Please check your CSV file!")
   }
 };
 

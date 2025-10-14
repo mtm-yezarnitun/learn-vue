@@ -234,10 +234,24 @@ module Api::V1
       File.open(file_path, "wb") do |file|
         file.write(params[:file].read)
       end
+      job_key = "import_result:#{current_user.id}:#{Time.now.to_i}"
+      ImportEventsJob.perform_async(current_user.id, file_path.to_s, job_key)
 
-      ImportEventsJob.perform_async(current_user.id, file_path.to_s)
+      render json: { status: "queued", job_key: job_key }
     end
 
+    def import_status
+      redis = Redis.new
+      result = redis.get(params[:job_key])
+
+      if result
+        redis.del(params[:job_key])
+        render json: JSON.parse(result)
+      else
+        render json: { status: "pending", message: "Import in progress..." }
+      end
+    end
+    
     def export_pdf
       require 'Prawn'
       require 'Time'
