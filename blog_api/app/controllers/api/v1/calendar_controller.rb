@@ -211,14 +211,31 @@ module Api::V1
       end
     end
 
+    def download_template
+      headers = ["Title", "Description", "Start Time", "End Time", "Location", "Attendees"]
+      csv_data = CSV.generate(headers: true) do |csv|
+        csv << headers
+        csv << ["Sample Event", "This is a description", "2025-10-14T10:00:00", "2025-10-14T12:00:00", "Office", "attendee1@example.com,attendee2@example.com"]
+      end
+      send_data csv_data, filename: "events_template.csv", type: 'text/csv'
+    end
+    
     def import_csv 
       if params[:file].nil?
-          render json: { error: "No file provided" }, status: :bad_request
-      return
+        render json: { error: "No file provided" }, status: :unprocessable_entity
+        return
+      end 
+
+      FileUtils.mkdir_p(Rails.root.join("tmp", "imports"))
+        
+      filename = "events_#{Time.now.to_i}_#{params[:file].original_filename}"
+      file_path = Rails.root.join("tmp", "imports",filename)
+
+      File.open(file_path, "wb") do |file|
+        file.write(params[:file].read)
       end
-        file = params[:file]
-        job_id = ImportEventsJob.perform_async(current_user.id, file.tempfile.path)
-        render json: { message: "File uploaded. Import job started.", job_id: job_id }
+
+      ImportEventsJob.perform_async(current_user.id, file_path.to_s)
     end
 
     def export_pdf

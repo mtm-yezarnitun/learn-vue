@@ -144,6 +144,16 @@
             🗑️ Delete All Events
           </button> 
 
+          <div class="upload-section">
+            <button 
+              @click="showUploadForm = true" 
+              class="btn btn-primary" 
+              :disabled="loading"
+            >
+              {{ loading ? 'Loading...' : 'Upload' }}
+          </button>
+          </div>
+
           <div class="dropdown" v-if="totalEventsCount > 0">
             <button @click="showPdfOptions = !showPdfOptions" class="btn btn-primary">
               Export as PDF
@@ -337,6 +347,19 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div v-if="showUploadForm" class="event-form-overlay">
+        <div class="event-form">
+          <h3>Import Events (CSV)</h3>
+          <input type="file" @change="handleFileUpload" accept=".csv" class="event-location" />    
+          <button @click="downloadTemplate" class="btn btn-primary">Download CSV Template</button>
+          <button @click="uploadCSV" :disabled="!csvFile">Upload</button>
+          <button @click="closeUploadForm" class="btn btn-secondary">Close</button>
+          <div v-if="status" class="event-location">
+            {{ status }}
+          </div>
         </div>
       </div>
 
@@ -1026,6 +1049,7 @@ const router = useRouter();
 
 const showEventForm = ref(false);
 const showUpdateForm = ref(false);
+const showUploadForm = ref(false);
 const showDeleteConfirm = ref(false);
 const showDeleteAllConfirm = ref(false);
 const showDeleteSelectedConfirm = ref(false);
@@ -1041,6 +1065,8 @@ const showPdfOptions = ref(false);
 const showCsvOptions = ref(false);
 const selectedEventDetail = ref(null); 
 const showEventDetail = ref(false); 
+const csvFile = ref(null);
+const status = ref('');
 
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
@@ -1117,9 +1143,11 @@ const searchedEventsByType = computed(() => {
   return { ongoing, upcoming, past };
 });
 
-
-
 const isSearching = computed(() => searchQuery.value.length > 0);
+
+const handleFileUpload = (e) => {
+  csvFile.value = e.target.files[0]
+}
 
 const events = computed(() => store.getters['calendar/upcomingEvents']);
 const pastEvents = computed(() => store.getters['calendar/pastEvents']);
@@ -1147,6 +1175,7 @@ onMounted(() => {
       if (showDeleteAllConfirm.value) cancelDeleteAll();
       if (showDeleteSelectedConfirm.value) cancelDeleteSelected();
       if (selectedEventDetail.value) closeDetailForm();
+      if (showUploadForm.value) closeUploadForm();
       if (showCsvOptions.value) {
         showCsvOptions.value = false
       }
@@ -1187,6 +1216,43 @@ async function refreshEvents() {
       console.error('Calendar refresh error:', error);
   } 
 }
+
+async function downloadTemplate() {
+try {
+        const response = await axios.get('http://localhost:3000/api/v1/calendar/download_template', {
+          responseType: 'blob'
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'events_template.csv'); 
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url); 
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
+    }
+
+async function uploadCSV() { 
+  if (!csvFile.value) return
+  const formData = new FormData()
+  formData.append("file" , csvFile.value)
+
+  try {
+    const response = await axios.post('http://localhost:3000/api/v1/calendar/import_csv', formData , {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
+    status.value = response.data.message
+    window.$toast.success('CSV imported successfully! Refresh to see the results!');
+    showUploadForm.value = false;
+  } catch(e) {
+    status.value = "Upload Files"
+    window.$toast.error('Cannot Import Files!');
+  }
+};
 
 async function exportEvents (filter = 'all'){
   if (!isAuthenticated.value) {
@@ -1482,6 +1548,10 @@ function clearError() {
   store.dispatch('calendar/clearError');
 }
 
+function closeUploadForm() {
+  showUploadForm.value = false;
+}
+
 function formatDateTime(dateTimeString) {
   if (!dateTimeString) return 'N/A';
   return new Date(dateTimeString).toLocaleString();
@@ -1629,7 +1699,7 @@ function closeDetailForm() {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 99999;
 }
 
 .event-form {
@@ -1640,6 +1710,7 @@ function closeDetailForm() {
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  z-index: 9999;
 }
 
 .form-group {
@@ -2175,5 +2246,6 @@ function closeDetailForm() {
   position: absolute;
   background-color: rgb(82, 82, 82);
   border-radius: 10%;
+  z-index: 9999;
 }
 </style>
