@@ -12,8 +12,8 @@ module Api
       def update
         if current_user.update(profile_params)
           render  json:{
-              "user": current_user,
-              "message": "Updated successfully."
+              user: current_user,
+              message: "Updated successfully."
             } ,status: :ok
         else
           render json: current_user.errors, status: :unprocessable_entity

@@ -7,7 +7,7 @@ class User < ApplicationRecord
          :jwt_authenticatable,
          jwt_revocation_strategy: JwtDenylist
 
-  enum role: { user: 0, admin: 1 }
+  enum :role, { user: 0, admin: 1 }
 
   has_many :posts, dependent: :destroy
   has_many :comments, dependent: :destroy
@@ -58,8 +58,8 @@ class User < ApplicationRecord
       uri = URI("https://oauth2.googleapis.com/token")
       
       response = Net::HTTP.post_form(uri, {
-        client_id: ENV["GOOGLE_CLIENT_ID"],
-        client_secret: ENV["GOOGLE_CLIENT_SECRET"],
+        client_id: ENV.fetch("GOOGLE_CLIENT_ID", nil),
+        client_secret: ENV.fetch("GOOGLE_CLIENT_SECRET", nil),
         refresh_token: google_refresh_token,
         grant_type: "refresh_token"
       })

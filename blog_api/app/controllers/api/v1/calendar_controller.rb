@@ -211,6 +211,16 @@ module Api::V1
       end
     end
 
+    def import_csv 
+      if params[:file].nil?
+          render json: { error: "No file provided" }, status: :bad_request
+      return
+      end
+        file = params[:file]
+        job_id = ImportEventsJob.perform_async(current_user.id, file.tempfile.path)
+        render json: { message: "File uploaded. Import job started.", job_id: job_id }
+    end
+
     def export_pdf
       require 'Prawn'
       require 'Time'
@@ -346,51 +356,51 @@ module Api::V1
     
     private
 
-    def calendar_event_to_json(event)
-      processed_attendees = event.attendees&.map do |attendee|
-        if attendee.respond_to?(:email)
-          attendee.email
-        elsif attendee.is_a?(String)
-          attendee
-        else
-          attendee.to_s
-        end
-      end || []
+      def calendar_event_to_json(event)
+        processed_attendees = event.attendees&.map do |attendee|
+          if attendee.respond_to?(:email)
+            attendee.email
+          elsif attendee.is_a?(String)
+            attendee
+          else
+            attendee.to_s
+          end
+        end || []
 
-      Rails.logger.info "Processed attendees: #{processed_attendees.inspect}"
-      {
-        id: event.id,
-        title: event.summary,
-        description: event.description,
-        location: event.location,
-        attendees: event.attendees&.map { |a| a.email } || [],
-        colorId: event.color_id,
-        recurrence: event.recurrence,
-        start_time: event.start&.date_time,
-        end_time: event.end&.date_time,
-        html_link: event.html_link
-      }
-    end
-
-    def update_cached_events
-      service = current_user.google_calendar_service
-      return unless service
-
-      begin
-        events = service.list_events(
-          'primary',
-          single_events: true,
-          order_by: 'startTime',
-          time_min: 1.year.ago.rfc3339
-        )
-
-        formatted = events.items.map { |e| calendar_event_to_json(e) }
-
-        Redis.new.set("user:#{current_user.id}:events", formatted.to_json)
-        Rails.logger.info "✅ Redis cache refreshed for user #{current_user.id}"
-      rescue StandardError => e
-        Rails.logger.error "⚠️ Failed to refresh Redis cache: #{e.message}"
+        Rails.logger.info "Processed attendees: #{processed_attendees.inspect}"
+        {
+          id: event.id,
+          title: event.summary,
+          description: event.description,
+          location: event.location,
+          attendees: event.attendees&.map { |a| a.email } || [],
+          colorId: event.color_id,
+          recurrence: event.recurrence,
+          start_time: event.start&.date_time,
+          end_time: event.end&.date_time,
+          html_link: event.html_link
+        }
       end
-    end
+
+      def update_cached_events
+        service = current_user.google_calendar_service
+        return unless service
+
+        begin
+          events = service.list_events(
+            'primary',
+            single_events: true,
+            order_by: 'startTime',
+            time_min: 1.year.ago.rfc3339
+          )
+
+          formatted = events.items.map { |e| calendar_event_to_json(e) }
+
+          Redis.new.set("user:#{current_user.id}:events", formatted.to_json)
+          Rails.logger.info "✅ Redis cache refreshed for user #{current_user.id}"
+        rescue StandardError => e
+          Rails.logger.error "⚠️ Failed to refresh Redis cache: #{e.message}"
+        end
+      end
   end
 end

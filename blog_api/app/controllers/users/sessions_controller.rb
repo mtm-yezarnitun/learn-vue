@@ -2,7 +2,8 @@ class Users::SessionsController < Devise::SessionsController
   respond_to :json
 
   def new
-    render json: { error: '405 Method Not Allowed: Login must be submitted as a form. Please send a POST request.' }, status: :method_not_allowed
+    render json: { error: '405 Method Not Allowed: Login must be submitted as a form. Please send a POST request.' }, 
+           status: :method_not_allowed
   end
 
   private

@@ -43,7 +43,7 @@ class Api::V1::GoogleAuthController < ApplicationController
   end
 
   def redirect
-    client_id = ENV["GOOGLE_CLIENT_ID"]
+    client_id = ENV.fetch("GOOGLE_CLIENT_ID", nil)
     redirect_uri = "http://localhost:3000/api/v1/google_callback"
     scope = "openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events"
 
@@ -73,30 +73,39 @@ class Api::V1::GoogleAuthController < ApplicationController
     payload = verify_google_id_token(id_token)
     return render json: { error: "Invalid ID token" }, status: :unauthorized unless payload
 
-    user = User.where(provider: "google_oauth2", uid: payload["sub"]).first_or_initialize
-    user.email = payload["email"]
-    user.password ||= Devise.friendly_token[0, 20]
-    user.provider = "google_oauth2"
-    user.uid = payload["sub"]
-    user.role = 'user'
+    user = User.find_by(provider: "google_oauth2", uid: payload["sub"])
 
+    user ||= User.find_by(email: payload["email"])
 
-    user.google_access_token = access_token
-    user.google_refresh_token = refresh_token
-    user.google_token_expires_at = expires_at
-
-    user.save!
-
-  if user.created_at == user.updated_at
-    user.send_welcome_email
-  end
+    if user
+      user.update!(
+        provider: "google_oauth2",
+        uid: payload["sub"],
+        google_access_token: access_token,
+        google_refresh_token: refresh_token,
+        google_token_expires_at: expires_at
+    )
+    else
+      user = User.create!(
+        email: payload["email"],
+        password: Devise.friendly_token[0, 20],
+        provider: "google_oauth2",
+        uid: payload["sub"],
+        role: "user",
+        google_access_token: access_token,
+        google_refresh_token: refresh_token,
+        google_token_expires_at: expires_at
+      )
+      user.send_welcome_email
+    end
 
     jwt, _ = Warden::JWTAuth::UserEncoder.new.call(user, :user, nil)
 
     redirect_to "http://localhost:5173/auth/success?token=#{jwt}" ,allow_other_host: true
-    rescue => e
-      Rails.logger.error "Google OAuth redirect error: #{e.message}"
-      redirect_to "http://localhost:5173/login"
+
+  rescue => e
+    Rails.logger.error "Google OAuth redirect error: #{e.message}"
+    redirect_to "http://localhost:5173/login"
   end
 
   def fetch_userinfo(access_token)
@@ -122,8 +131,8 @@ class Api::V1::GoogleAuthController < ApplicationController
       uri = URI("https://oauth2.googleapis.com/token")
       res = Net::HTTP.post_form(uri, {
         code: code,
-        client_id: ENV["GOOGLE_CLIENT_ID"],
-        client_secret: ENV["GOOGLE_CLIENT_SECRET"],
+        client_id: ENV.fetch("GOOGLE_CLIENT_ID", nil),
+        client_secret: ENV.fetch("GOOGLE_CLIENT_SECRET", nil),
         redirect_uri: "http://localhost:3000/api/v1/google_callback",
         grant_type: "authorization_code"
       })

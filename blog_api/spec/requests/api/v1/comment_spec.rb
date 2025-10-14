@@ -28,7 +28,10 @@ RSpec.describe "API::V1::Comments", type: :request do
     let(:invalid_params) { { comment: { content: "" } } }
 
     it "creates a comment under the post" do
-      expect { post "/api/v1/posts/#{post_record.id}/comments", params: valid_params,headers: headers }.to change(Comment, :count).by(1)
+      expect do
+        post "/api/v1/posts/#{post_record.id}/comments", params: valid_params,
+                                                         headers: headers
+      end.to change(Comment, :count).by(1)
       expect(response).to have_http_status(:created)
       json = JSON.parse(response.body)
       expect(json["content"]).to eq("New comment")
@@ -36,7 +39,10 @@ RSpec.describe "API::V1::Comments", type: :request do
     end
     
     it "cannot creates a comment with invalid params" do
-      expect { post "/api/v1/posts/#{post_record.id}/comments", params: invalid_params ,headers: headers}.not_to change(Comment, :count)
+      expect do
+        post "/api/v1/posts/#{post_record.id}/comments", params: invalid_params ,
+                                                         headers: headers
+      end.not_to change(Comment, :count)
       expect(response).to have_http_status(:unprocessable_entity)
       json = JSON.parse(response.body)
       expect(json).to have_key("errors")
@@ -47,7 +53,9 @@ RSpec.describe "API::V1::Comments", type: :request do
   #delete
   describe "DELETE /api/v1/posts/:post_id/comments/:id" do
     it "deletes a comment if owner" do
-      expect {delete "/api/v1/posts/#{post_record.id}/comments/#{comment.id}",headers: headers}.to change(Comment, :count).by(-1)
+      expect do
+        delete "/api/v1/posts/#{post_record.id}/comments/#{comment.id}",headers: headers
+      end.to change(Comment, :count).by(-1)
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json["message"]).to eq("Comment deleted successfully.")

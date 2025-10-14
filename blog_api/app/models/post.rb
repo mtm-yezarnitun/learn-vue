@@ -6,7 +6,5 @@ class Post < ApplicationRecord
 
   has_many :comments, dependent: :destroy
 
-  def user_email
-    user.email
-  end
+  delegate :email, to: :user, prefix: true
 end
