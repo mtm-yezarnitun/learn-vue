@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@rails/actioncable": "^8.0.300",
     "axios": "^1.12.2",
     "chart.js": "^4.5.0",
     "globe.gl": "^2.44.0",

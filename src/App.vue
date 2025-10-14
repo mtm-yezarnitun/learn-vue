@@ -56,6 +56,8 @@ import { useStore } from "vuex";
 import { useToast } from 'vue-toastification'
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { watch } from "vue";
+import consumer from "./consumer"
 
 const router = useRouter();
 const store = useStore();
@@ -68,6 +70,20 @@ onMounted(() => {
   window.$toast = toast
 })
 
+watch(user, (newUser) => {
+  if (newUser?.id) {
+    consumer.subscriptions.create(
+      { channel: "EventNotificationsChannel", user_id: newUser.id }, 
+      {
+        connected() { console.log("Connected to EventNotificationsChannel") },
+        received(data) {
+          console.log("Received AC message:", data);
+          toast.info(data.message); 
+        }
+      }
+    )
+  }
+}, { immediate: true });
 
 function logout() {
   store.dispatch("auth/logout", {router});

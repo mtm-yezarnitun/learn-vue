@@ -47,5 +47,6 @@ Rails.application.routes.draw do
   if Rails.env.development?
     mount Sidekiq::Web => '/sidekiq'
     mount LetterOpenerWeb::Engine, at: '/mailbox'
+    mount ActionCable.server => '/cable'
   end
 end

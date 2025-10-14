@@ -9,3 +9,6 @@
     cron: "*/60 * * * *"   
     class: "GoogleCalendarAutoSyncWorker"
     queue: "default"
+  event_notification:
+    cron: "*/1 * * * *"   
+    class: "EventNotificationJob"
