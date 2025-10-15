@@ -49,6 +49,7 @@
         </template>
       </div>
     </nav>
+      <AnnouncementTicker />
 
     <router-view />
   </div>
@@ -61,6 +62,7 @@ import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { watch } from "vue";
 import consumer from "./consumer"
+import AnnouncementTicker from "./components/AnnouncementTicker.vue";
 
 const router = useRouter();
 const store = useStore();

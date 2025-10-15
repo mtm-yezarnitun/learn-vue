@@ -12,6 +12,11 @@ class Api::V1::AnnouncementsController < ApplicationController
         @announcements = Announcement.order(start_time: :desc)
         render json: @announcements
     end
+    
+    def active 
+        active_ones = Announcement.where(active: true)
+        render json: active_ones
+    end
 
     def create
         announcement = Announcement.new(announcement_params)

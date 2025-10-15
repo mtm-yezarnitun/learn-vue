@@ -38,7 +38,11 @@ Rails.application.routes.draw do
       end
       resource :profile, only: %i[show update]
 
-      resources :announcements
+      resources :announcements do
+        collection do
+          get :active
+        end
+      end
     end
   end
 
