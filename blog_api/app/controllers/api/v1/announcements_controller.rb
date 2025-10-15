@@ -20,6 +20,11 @@ class Api::V1::AnnouncementsController < ApplicationController
 
     def create
         announcement = Announcement.new(announcement_params)
+
+         if announcement.end_time <= announcement.start_time
+          return render json: { error: 'End time must be after start time' }, status: :bad_request
+        end
+
         if announcement.save
         AnnouncementSchedulerJob.set(wait_until: announcement.start_time).perform_async(announcement.id)
         render json: announcement
@@ -30,6 +35,11 @@ class Api::V1::AnnouncementsController < ApplicationController
 
     def update
         announcement = Announcement.find(params[:id])
+
+        if announcement.end_time <= announcement.start_time
+          return render json: { error: 'End time must be after start time' }, status: :bad_request
+        end
+        
         if announcement.update(announcement_params)
         render json: announcement
         else

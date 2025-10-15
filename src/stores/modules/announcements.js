@@ -18,6 +18,12 @@ const announcements = {
     addAnnouncements(state , newAnnouncements) {
         state.announcements.unshift(newAnnouncements);
     },
+    editAnnouncements(state, updatedAnnouncement) {
+      const index = state.announcements.findIndex(a => a.id === updatedAnnouncement.id);
+      if (index !== -1) {
+        state.announcements.splice(index, 1, updatedAnnouncement);
+      }
+    },
     removeAnnouncements(state ,id) {
         state.announcements = state.announcements.filter(a => a.id !== id);
     },
@@ -49,11 +55,28 @@ const announcements = {
                 announcement : announcementData,
             });
             commit ('addAnnouncements' , res.data)
+            window.$toast.success("Announcement created Successfully!");
         } catch (err) {
             commit ('setError' , err.response?.data || err.message )
+            window.$toast.error("Cannot create Announcements!");
         } finally {
             commit ('setLoading' , false)
-            window.$toast.success("Announcement Created Successfully!");
+  
+        }
+    },
+    async updateAnnouncements({ commit }, announcementData ) {
+        commit('setLoading', true )
+        try {
+            const res = await axios.put (`${API_URL}/announcements/${announcementData.id}` , {
+                announcement : announcementData,
+            });
+            commit ('editAnnouncements' , res.data)
+            window.$toast.success("Announcement edited Successfully!");
+        } catch (err) {
+            commit ('setError' , err.response?.data || err.message )
+            window.$toast.success("Can't Edit Announcement!");
+        } finally {
+            commit ('setLoading' , false)
         }
     },
     async deleteAnnouncements({ commit }, id) {
@@ -61,11 +84,12 @@ const announcements = {
         try {
             await axios.delete (`${API_URL}/announcements/${id}`);
             commit ('removeAnnouncements' , id)
+            window.$toast.success("Deleted Announcement Successfully!");
         } catch (err) {
             commit ('setError' , err.response?.data || err.message )
+            window.$toast.success("Couldn't delete Announcement!");
         } finally {
             commit ('setLoading' , false)
-            window.$toast.success("Deleted Announcement Successfully!");
         }
     },
     async fetchActiveAnnouncements({ commit }) {
@@ -83,6 +107,14 @@ const announcements = {
   },
   getters: {
     allAnnouncements: (state) => state.announcements,
+    active: (state) => {
+      const now = new Date();
+      return state.announcements.filter(announcements => {
+        const annStart = new Date(announcements.start_time || announcements.start?.date_time);
+        const annEnd = new Date(announcements.end_time || announcements.end?.date_time);
+        return annStart <= now && annEnd >= now;
+      });
+    },
     isLoading: (state) => state.loading,
    }
 };

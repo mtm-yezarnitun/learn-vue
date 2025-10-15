@@ -1,7 +1,7 @@
 <template>
-  <div v-if="announcements.length" class="announcement-ticker">
+  <div v-if="activeAnnouncements.length" class="announcement-ticker">
     <div class="scroll-text">
-      <span v-for="a in announcements" :key="a.id" class="ticker-msg">
+      <span v-for="a in activeAnnouncements" :key="a.id" class="ticker-msg">
         🔔 {{ a.title }} — {{ a.message }} &nbsp;&nbsp;&nbsp;
       </span>
     </div>
@@ -13,11 +13,11 @@ import { onMounted, computed } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
-const announcements = computed(() => store.getters["announcements/allAnnouncements"]);
+const activeAnnouncements = computed(() => store.getters["announcements/active"]);
 
 onMounted(() => {
-  store.dispatch("announcements/fetchActiveAnnouncements");
-  setInterval(() => store.dispatch("announcements/fetchActiveAnnouncements"), 60000);
+  // store.dispatch("announcements/fetchActiveAnnouncements");
+  // setInterval(() => store.dispatch("announcements/fetchActiveAnnouncements"), 60000);
 });
 </script>
 
