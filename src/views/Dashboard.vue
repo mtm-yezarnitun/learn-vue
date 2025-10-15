@@ -20,6 +20,7 @@
       <router-link to="/rating" class="card">Rating</router-link>
       <router-link to="/calculator" class="card">Calculator</router-link>
       <router-link to="/counter" class="card">Counter</router-link>
+      <router-link v-if="user.role == 'admin'" to="/announcements" class="card">Announcements</router-link>
       <router-link v-if="user.provider == 'google_oauth2'  && user.google_refresh_token" to="/calendar" class="card">Calendar</router-link>
     </section>
   </div>

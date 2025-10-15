@@ -15,6 +15,7 @@ import User from '../views/Users.vue'
 import Profile from '../views/ProfilePage.vue'
 import AuthSuccess from "../views/AuthSuccess.vue";
 import Calendar from "../views/CalendarPage.vue";
+import AdminAnnouncements from "../views/AdminAnnouncements.vue";
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -32,7 +33,8 @@ const routes = [
   { path: "/admin/users", component: User },
   { path: "/profile", component: Profile },
   { path: "/auth/success", component: AuthSuccess },
-  { path: "/calendar", component: Calendar }
+  { path: "/calendar", component: Calendar },
+  { path: "/announcements", component: AdminAnnouncements }
 ]
 
 const router = createRouter({

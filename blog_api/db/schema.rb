@@ -10,7 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_30_051247) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_15_063426) do
+  create_table "announcements", force: :cascade do |t|
+    t.string "title"
+    t.text "message"
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.boolean "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "comments", force: :cascade do |t|
     t.text "content"
     t.integer "user_id", null: false

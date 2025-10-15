@@ -37,6 +37,8 @@ Rails.application.routes.draw do
         resources :comments, only: %i[index create destroy]
       end
       resource :profile, only: %i[show update]
+
+      resources :announcements
     end
   end
 
