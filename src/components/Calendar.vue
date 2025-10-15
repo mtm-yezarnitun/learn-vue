@@ -1033,6 +1033,12 @@
     </div>
   </div>
 
+  <div v-if="importing" class="modal-overlay">
+    <div class="modal">
+      <p class="event-location">{{ importMessage }}</p>
+    </div>
+  </div>
+
 </template>
 
 <script setup>
@@ -1063,7 +1069,8 @@ const showCsvOptions = ref(false);
 const selectedEventDetail = ref(null); 
 const showEventDetail = ref(false); 
 const csvFile = ref(null);
-const status = ref('');
+const importing = ref(null);
+const importMessage = ref("Importing Events Please Wait!");
 
 const eventColors = ref([
   { id: '1', name: 'Lavender', hex: '#7986cb' },
@@ -1239,23 +1246,29 @@ async function uploadCSV() {
   formData.append("file" , csvFile.value)
 
   try {
+    importing.value = true
+    importMessage.value = "Uploading file…"
+
     const response = await axios.post('http://localhost:3000/api/v1/calendar/import_csv', formData , {
       headers: { "Content-Type": "multipart/form-data" }
     })
+
     showUploadForm.value = false;
     const jobKey = response.data.job_key
+    importMessage.value = "Processing events…"
 
     let finished = false
       while (!finished) {
         const statusRes = await axios.get('http://localhost:3000/api/v1/calendar/import_status', { params: { job_key: jobKey } })
 
         if (statusRes.data.status === "ok") {
-          window.$toast.success(statusRes.data.message + "Refresh to see results!")
+          window.$toast.success(statusRes.data.message)
           finished = true
         } else if (statusRes.data.status === "error") {
           window.$toast.error(statusRes.data.message + '\n' + (statusRes.data.errors?.slice(0, 3).join('\n') || ""))
           finished = true 
         } else {
+          importMessage.value = statusRes.data.message || "Still importing…"
           await new Promise(r => setTimeout(r, 1000)) 
         }
       }
@@ -1263,6 +1276,10 @@ async function uploadCSV() {
   }catch(err) {
     showUploadForm.value = false
     window.$toast.error("Import failed! Please check your CSV file!")
+  }finally {
+    importing.value = false
+    showUploadForm.value = false
+    await refreshEvents();
   }
 };
 
