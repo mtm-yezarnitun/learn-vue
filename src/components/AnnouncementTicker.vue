@@ -9,16 +9,12 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from "vue";
+import { computed } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
 const activeAnnouncements = computed(() => store.getters["announcements/active"]);
 
-onMounted(() => {
-  // store.dispatch("announcements/fetchActiveAnnouncements");
-  // setInterval(() => store.dispatch("announcements/fetchActiveAnnouncements"), 60000);
-});
 </script>
 
 <style scoped>

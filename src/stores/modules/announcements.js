@@ -92,17 +92,6 @@ const announcements = {
             commit ('setLoading' , false)
         }
     },
-    async fetchActiveAnnouncements({ commit }) {
-        commit('setLoading', true)
-        try {
-            const res = await axios.get(`${API_URL}/announcements/active`)
-            commit('setAnnouncements', res.data)
-        } catch (err) {
-            commit('setError', err.response?.data || err.message)
-        } finally {
-            commit('setLoading', false)
-        }
-    },
 
   },
   getters: {
