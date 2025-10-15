@@ -44,10 +44,6 @@
     <div v-if="showUpdateForm" class="event-form-overlay">
         <div class="event-form">
           <h3>Update Announcement</h3>
-          <div v-if="error" class="error-message">
-            {{ error }}
-            <button @click="clearError" class="btn-close">×</button>
-          </div>
           <form @submit.prevent="updateAnnouncements">
             <div class="form-group">
               <label>Title:</label>
@@ -166,6 +162,14 @@ function openUpdateForm(a) {
 }
 
 async function updateAnnouncements() {
+  const start = new Date(updateAnnouncementData.value.start_time);
+  const end = new Date(updateAnnouncementData.value.end_time);
+
+  if (start >= end) {
+    window.$toast.error("End time must be after start time!");
+    return;
+  }
+
   try {
     await store.dispatch('announcements/updateAnnouncements', {
       id: updateAnnouncementData.value.id,

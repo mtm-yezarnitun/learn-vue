@@ -37,9 +37,11 @@
       <div class="user-info">
         <template v-if="isAuthenticated">
           <div v-if="user">
-            <router-link v-if="user.role == 'admin'" to="/admin/users"> Manage </router-link>
-            <router-link to="/profile"><span>{{ user.email }}</span></router-link>
-            <button @click="logout">Logout</button>
+            <div class="profile-action">
+              <router-link v-if="user.role == 'admin'" to="/admin/users"> Manage </router-link>
+              <router-link to="/profile">{{ user.email }}</router-link>
+              <button @click="logout">Logout</button>
+            </div>
           </div>
         </template>
         <template v-else>
@@ -158,7 +160,14 @@ router-link {
 }
 
 .user-info {
-  width: 20%;
+  display: flex;
+  flex-direction: column;
+  width: 40%;
+}
+
+.profilee-action {
+  display: flex;
+  flex-direction: column;
 }
 
 </style>

@@ -74,7 +74,7 @@ const announcements = {
             window.$toast.success("Announcement edited Successfully!");
         } catch (err) {
             commit ('setError' , err.response?.data || err.message )
-            window.$toast.success("Can't Edit Announcement!");
+            window.$toast.error("Can't Edit Announcement!");
         } finally {
             commit ('setLoading' , false)
         }
@@ -87,7 +87,7 @@ const announcements = {
             window.$toast.success("Deleted Announcement Successfully!");
         } catch (err) {
             commit ('setError' , err.response?.data || err.message )
-            window.$toast.success("Couldn't delete Announcement!");
+            window.$toast.error("Couldn't delete Announcement!");
         } finally {
             commit ('setLoading' , false)
         }
